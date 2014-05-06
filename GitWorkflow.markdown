@@ -1,7 +1,3 @@
-**Document version: 0.5**
-
-**Last update: 2014-03-03**
-
 **Author: Anar Manafov (Anar.Manafov@gmail.com)**
 
 ---
