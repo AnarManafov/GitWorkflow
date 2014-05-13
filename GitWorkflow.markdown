@@ -2,6 +2,33 @@
 
 ---
 
+**Table of Contents** 
+
+- [Introduction](#user-content-introduction)
+- [Requirements and Tips](#user-content-requirements-and-tips)
+- [The workflow](#user-content-the-workflow)
+	- [Important](#user-content-important)
+	- [Branches](#user-content-branches)
+		- [master branch](#user-content-master-branch)
+		- [dev branch](#user-content-dev-branch)
+		- [RC branch](#user-content-rc-branch)
+		- [HotFix branch](#user-content-hotfix-branch)
+		- [FEATURE/TICKET branches](#user-content-featureticket-branches)
+	- [Roles](#user-content-roles)
+- [User stories](#user-content-user-stories)
+	- [Developers](#user-content-developers)
+		- [Prepare the environment](#user-content-prepare-the-environment)
+		- [Create a feature branch](#user-content-create-a-feature-branch)
+		- [Sync your feature branch](#user-content-sync-your-feature-branch)
+		- [Request to pull](#user-content-request-to-pull)
+		- [Create patches](#user-content-create-patches)
+		- [Apply a patch](#user-content-apply-a-patch)
+	- [Release manager](#user-content-release-manager)
+		- [Prepare the environment](#user-content-prepare-the-environment-1)
+		- [Process pull requests](#user-content-process-pull-requests)
+		- [Prepare a Release Candidate](#user-content-prepare-a-release-candidate)
+		- [Hot Fixes](#user-content-hot-fixes)
+
 # Introduction
 This document describes a git workflow used by the development team. The workflow aims to provide:
 
