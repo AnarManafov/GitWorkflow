@@ -77,11 +77,11 @@ Contains all the stable, released code.
 ### RC branch
 RC or ReleaseCandidate branch is a temporary branch. This branch intends to provide uninterruptible development - to avoid such mails like "Please do not commit..., we freeze a branch" :).
 
-At the moment of a release, a release manager will branch from **dev** to create an **RC** branch to start a release procedure. It also means feature freeze on the **RC** branch and only bug fixes can be introduced in it - no commits with new features. The fixes introduced in **RC** should be then synchronized into **dev** as well, to keep development mainstream up to date. 
+At the moment of a release, a release manager will branch from **dev** to create an **RC** branch to start a release procedure. It also means feature freeze on the **RC** branch and only bug fixes can be introduced in it - no commits with new features. The fixes introduced in **RC** should be then synchronised into **dev** as well, to keep development mainstream up to date. 
 
 While a release manager works on the **RC** branch, all developers continue developing in **dev** and in their feature branches - uninterruptible development.
 
-The branch should be deleted as soon as it has benn merged with the **master**.
+The branch should be deleted as soon as it has been merged with the **master**.
 
 ### HotFix branch
 It is a branch for hot fixes. It should contain only urgent hot fixes for the released versions, which can't wait until the next scheduled release of the product.
@@ -97,7 +97,7 @@ Rebasing is important to keep new commits together for possible tuning or squash
 
 Whenever a feature is ready (or a stable part of the feature) it can be merged with the **dev** branch.
 
-It is recommmended to keep feature branches even after their merge with **dev**. It will simplify fine tunning in case if the feature represented by the branch will be revereted from the **dev** for additional development or fixes/corrections.
+It is recommended to keep feature branches even after their merge with **dev**. It will simplify fine tuning in case if the feature represented by the branch will be reverted from the **dev** for additional development or fixes/corrections.
 
 Feature branches should be deleted as soon as their commits are merged into the **master** via the **dev** branch.
 
@@ -109,7 +109,7 @@ Developer (r/w: FEATURE(s), HOT FIX; read only: MASTER, DEV)
 # User stories
 In the following documentation we use:
 
-* **mainrepo_url** - the url of the main repo, which is restricted and managed by release managers only. Developers must not have write permitions on it.
+* **mainrepo_url** - the url of the main repo, which is restricted and managed by release managers only. Developers must not have write permissions on it.
 * **mainrepo** - the name of the main repo.
 * **url_of_the_fork** - the url of your fork repo of the main repo.
 * **developerrepo_url** - the url of a developer's repo.
@@ -234,7 +234,34 @@ Even if you are 100% sure, ALWAYS first execute "git push" without "-f". Revise 
 
 **Stop working on the featureXXX branch, after you sent a request to pull. Create a new branch for any other feature/ticket/bug.**
 
+### Create patches
+Just in case if you can't just push or request to pull your changes, you can create a git patch.
 
+    ~~~~~~~~~~~~~~~~~~~~~    
+    git format-patch origin/master --stdout > a_fix.patch
+    ~~~~~~~~~~~~~~~~~~~~~
+    
+The command above will create a patch, of the changes which differ you from the "origin/master" branch.
+
+### Apply a patch
+
+    ~~~~~~~~~~~~~~~~~~~~~
+    git am --signoff < a_fix.patch
+    ~~~~~~~~~~~~~~~~~~~~~
+
+If there are different line ending settings between source and dest. machines you may want to either ignore space changes - but in this case git will create a new commit ID 
+
+    ~~~~~~~~~~~~~~~~~~~~~
+    git am --ignore-space-change --ignore-whitespace --signoff < a_fix.patch
+    ~~~~~~~~~~~~~~~~~~~~~
+
+or try to preserver cr or the patch 0 (but this will cause a warning about trailing whitespaces).
+
+    ~~~~~~~~~~~~~~~~~~~~~
+    git am --keep-cr --signoff < a_fix.patch
+    ~~~~~~~~~~~~~~~~~~~~~
+
+    
 ## Release manager
 We use github as a host for our repository. The write access to the repository is restricted to release managers only. The repository contains the following permanent branches: **master**, **dev**. The "RC" and "HotFix" are created (branched) only when we need them and deleted as soon as their commits are merged into the master or when we don't need those branches.
 
