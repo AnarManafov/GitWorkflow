@@ -370,39 +370,49 @@ It can be easily the case when you need to change history (rebase, move/delete/s
 
 Let's take an example.
 Dev before change of the history and F is your feature branch:
-C0
-|
-C1
-|
-C2
-|\
-C3 cf1
-C4 cf2
- 
+    
+    ~~~~~~~~~~~~~~~~~~~~~
+    C0
+    |
+    C1
+    |
+    C2
+    |\
+    C3 cf1
+    C4 cf2
+     ~~~~~~~~~~~~~~~~~~~~~
+     
+     
 ‘DEV’ has C1,C2,C3,C4
 ‘F’ has C1,C2,cf1,cf2
 
 After the change of the history of the DEV it looks like:
-C0
-|
-C1x
-|
-C2x
-|   
-C3x
-C4x
- 
-And F still looks like:
-C0
-|
-C1
-|
-C2
-|
-cf1
-|
-cf2
 
+    ~~~~~~~~~~~~~~~~~~~~~
+    C0
+    |
+    C1x
+    |
+    C2x
+    |   
+    C3x
+    C4x
+    ~~~~~~~~~~~~~~~~~~~~~
+    
+And F still looks like:
+
+    ~~~~~~~~~~~~~~~~~~~~~
+    C0
+    |
+    C1
+    |
+    C2
+    |
+    cf1
+    |
+    cf2
+    ~~~~~~~~~~~~~~~~~~~~~
+    
 For git commits C1, C2 is now different from the commits C1x, C2x from the DEV branch. 
 To avoid merging nightmare and duplications of the commits we have to just change the parent commit of our commits in the feature branch. The commits cf1, cf2 is our commits belonging to the new feature. At the moment their parent is C2.
 
