@@ -28,6 +28,8 @@
 		- [Process pull requests](#user-content-process-pull-requests)
 		- [Prepare a Release Candidate](#user-content-prepare-a-release-candidate)
 		- [Hot Fixes](#user-content-hot-fixes)
+- [Tips and HOWTOs](#user-content-tips-and-howtos)
+	- [How to recover after upstream branch was rebased](#user-content-how-to-recover-after-upstream-branch-was-rebased)
 
 # Introduction
 This document describes a git workflow used by the development team. The workflow aims to provide:
@@ -360,11 +362,11 @@ Release managers should merge changes only via a local repo. Don't use github WE
 
 ### Hot Fixes
 
-# Tips or something went wrong
+# Tips and HOWTOs
 
 ## How to recover after upstream branch was rebased.
-The following tip will help us to recover in cases when you or your collegue had to change something in the history of a high level branch (our upstream). 
-It can be easely the case when you need to change history (rebase, move/delete/squash commits, etc.) of the DEV branch, for example. When the history of dev branch is changed, then all branches inherited from it (feature branches) will have problems to rebase on it, becasue all commits, which differ you from the dev branch will be consider by git as new (your) changes and it will try to merge them.
+The following tip will help us to recover in cases when you or your colleague had to change something in the history of a high level branch (our upstream). 
+It can be easily the case when you need to change history (rebase, move/delete/squash commits, etc.) of the DEV branch, for example. When the history of dev branch is changed, then all branches inherited from it (feature branches) will have problems to rebase on it, because all commits, which differ you from the dev branch will be consider by git as new (your) changes and it will try to merge them.
 
 Let's take an example.
 Dev before change of the history and F is your feature branch:
@@ -404,9 +406,9 @@ cf2
 For git commits C1, C2 is now different from the commits C1x, C2x from the DEV branch. 
 To avoid merging nightmare and duplications of the commits we have to just change the parent commit of our commits in the feature branch. The commits cf1, cf2 is our commits belonging to the new feature. At the moment their parent is C2.
 
-So, what basicly happend is that our feature branch is not forked from the changed DEV anymore. But we want it to depend on the DEV. What we need is only to move commits of the feature branch to a new parent - C2x.
+So, what basically happened is that our feature branch is not forked from the changed DEV anymore. But we want it to depend on the DEV. What we need is only to move commits of the feature branch to a new parent - C2x.
 
-Fortunatelly git can easely help us to fix our problem. Checkout your feature branch you want to fix and execute the following:
+Fortunately git can easily help us to fix our problem. Checkout your feature branch you want to fix and execute the following:
 
     ~~~~~~~~~~~~~~~~~~~~~
     git fetch mainrepo
@@ -416,7 +418,8 @@ Fortunatelly git can easely help us to fix our problem. Checkout your feature br
 This basically says, “Check out the F branch, figure out the patches from the common ancestor of the mainrepo/dev and our local dev (which is not changed yet) branches, and then replay them onto master.”
 If you don't have a local, unchanged version of the DEV branch, then you can even manually find out the commit ID, which is the last common between the new DEV and your F branch and execute:
 
-    git rebase --onto mainrepo/dev dev F
+    ~~~~~~~~~~~~~~~~~~~~~
+    git rebase --onto mainrepo/dev <commitid> F
     ~~~~~~~~~~~~~~~~~~~~~
 
 
