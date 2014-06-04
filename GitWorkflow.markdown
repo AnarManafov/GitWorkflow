@@ -429,7 +429,7 @@ This basically says, “Check out the F branch, figure out the patches from the 
 If you don't have a local, unchanged version of the DEV branch, then you can even manually find out the commit ID, which is the last common between the new DEV and your F branch and execute:
 
     ~~~~~~~~~~~~~~~~~~~~~
-    git rebase --onto mainrepo/dev <commitid> F
+    git rebase --onto <new-parent> <old-parent> F
     ~~~~~~~~~~~~~~~~~~~~~
 
 
