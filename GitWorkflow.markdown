@@ -152,6 +152,7 @@ In the following documentation we use:
     git config --global branch.autosetuprebase always
     git config --global user.name "FirsName LastName"
     git config --global user.email johndoe@example.com
+    git config --global core.ignorecase false
     ~~~~~~~~~~~~~~~~~~~~~
     
 1. Using github fork the main repo.
@@ -302,6 +303,7 @@ Release managers should merge changes only via a local repo. Don't use github WE
     git config --global branch.autosetuprebase always
     git config --global user.name "FirsName LastName"
     git config --global user.email johndoe@example.com
+    git config --global core.ignorecase false
     ~~~~~~~~~~~~~~~~~~~~~
     
 1. Using github fork the main repo.
