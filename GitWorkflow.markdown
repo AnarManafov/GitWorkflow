@@ -208,7 +208,7 @@ As often as possible sync your feature branch with the central dev.
 	
 	~~~~~~~~~~~~~~~~~~~~~
 	git fetch mainrepo
-	git checkout -f featureXXX
+	git checkout featureXXX
 	git rebase mainrepo/dev
 	~~~~~~~~~~~~~~~~~~~~~
 	* Resolve conflicts if any.
