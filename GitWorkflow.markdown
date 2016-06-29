@@ -238,7 +238,7 @@ Even if you are 100% sure, ALWAYS first execute "git push" without "-f". Revise 
 
     ~~~~~~~~~~~~~~~~~~~~~    
     git fetch mainrepo
-    git checkout -f featureXXX
+    git checkout featureXXX
     git rebase mainrepo/dev
     ~~~~~~~~~~~~~~~~~~~~~
     * Resolve conflicts if any.
