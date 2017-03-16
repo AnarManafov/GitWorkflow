@@ -106,11 +106,11 @@ Contains all the stable, released code.
 ### RC branch
 RC or ReleaseCandidate branch is a temporary branch. This branch intends to provide uninterruptible development - to avoid such mails like "Please do not commit..., we freeze a branch" :).
 
-At the moment of a release, a release manager will branch from **dev** to create an **RC** branch to start a release procedure. It also means feature freeze on the **RC** branch and only bug fixes can be introduced in it - no commits with new features. The fixes introduced in **RC** should be then synchronised into **dev** as well, to keep development mainstream up to date. 
+At the moment of a release, a release manager will branch from **dev** to create an **RC** branch to start a release procedure. It also means feature freeze on the **RC** branch and only bug fixes can be introduced on it - no commits with new features.
 
 While a release manager works on the **RC** branch, all developers continue developing in **dev** and in their feature branches - uninterruptible development.
 
-The branch should be deleted as soon as it has been merged with the **master**.
+The branch should be deleted as soon as it has been merged with the **master**. Once the **RC** branch is merged into the **master**, the **dev** branch should be rebased from the **master**. The rebases might require [a parent commit change](#user-content-how-to-recover-after-upstream-branch-was-rebased), if git is not able to rebase automatically.
 
 ### HotFix branch
 It is a branch for hot fixes. It should contain only urgent hot fixes for the released versions, which can't wait until the next scheduled release of the product.
