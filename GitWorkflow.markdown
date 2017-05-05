@@ -32,13 +32,13 @@
 	- [How to recover after upstream branch was rebased](#user-content-how-to-recover-after-upstream-branch-was-rebased)
 
 # Introduction
-This document describes a git workflow used by the development team. The workflow aims to provide:
+This document describes a git workflow for development teams. The workflow aims to provide:
 
 - uninterruptible development,
 - a stable and releasable at any time master,
 - a multilevel protection against conflicts,
-- a multilevel possibility to recover from errors/mistakes before changes comes into the master,
-- a clean history of the master branch without merge commits and other unwanted garbage.
+- a multilevel possibility to recover from errors/mistakes before changes come into the master,
+- a clean, leaner history of the master branch without merge commits and other unwanted garbage.
 
 ---
 **Treat public history as immutable, atomic, and easy to follow.
