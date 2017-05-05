@@ -328,9 +328,10 @@ The write access to the repository is restricted to release managers only. The r
     ~~~~~~~~~~~~~~~~~~~~~
 
 ### Process pull requests
-You can process pull requests automatically if you are using GitLab or GitHub. Both vendors offers users a possbility to use fast forward merging.
+You can process pull requests automatically if you are using GitLab or GitHub. Both vendors offer users a possbility to use fast forward merging.
 
 GitLab: https://docs.gitlab.com/ee/user/project/merge_requests/fast_forward_merge.html ("Fast-forward merge")
+
 GitHub: https://help.github.com/articles/merging-a-pull-request/ ("Rebase and merge")
 
 1. update
