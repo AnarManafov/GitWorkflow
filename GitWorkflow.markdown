@@ -293,9 +293,8 @@ or try to preserver cr or the patch 0 (but this will cause a warning about trail
 
     
 ## Release manager
-We use github as a host for our repository. The write access to the repository is restricted to release managers only. The repository contains the following permanent branches: **master**, **dev**. The "RC" and "HotFix" are created (branched) only when we need them and deleted as soon as their commits are merged into the master or when we don't need those branches.
+The write access to the repository is restricted to release managers only. The repository contains the following permanent branches: **master**, **dev**. The "RC" and "HotFix" are created (branched) only when we need them and deleted as soon as their commits are merged into the master or when we don't need those branches.
 
-Release managers should merge changes only via a local repo. Don't use github WEBUI or other GUI tools to process pull requests. Why? See below in [Process pull requests](### Process pull requests).
 ### Prepare the environment
 1. setup git configuration. The following you have yo execute on all of your machines, or copy the git config to all of your machines.
 
@@ -329,7 +328,10 @@ Release managers should merge changes only via a local repo. Don't use github WE
     ~~~~~~~~~~~~~~~~~~~~~
 
 ### Process pull requests
-**Unfortunately github doesn't support --ff-only merge yet (https://github.com/blog/843-the-merge-button). But it will. The feature is in development.** Until the feature is not release you have to process pull requests manually.  When a pull request arrives, do the fowling
+You can process pull requests automatically if you are using GitLab or GitHub. Both vendors offers users a possbility to use fast forward merging.
+
+GitLab: https://docs.gitlab.com/ee/user/project/merge_requests/fast_forward_merge.html ("Fast-forward merge")
+GitHub: https://help.github.com/articles/merging-a-pull-request/ ("Rebase and merge")
 
 1. update
 
