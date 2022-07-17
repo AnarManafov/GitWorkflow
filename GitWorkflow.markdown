@@ -223,14 +223,14 @@ As often as possible sync your feature branch with the central dev.
 	~~~~~~~~~~~~~~~~~~~~~
 	Most probably your local repo and the remote repo will be diverged at this point. Git will warn you that you are about to change the history and will not allow you to push.
 
-	Please, revise the output to make sure that you are actually pushing to the right repo and only after that execute the following to force git to change the history.
+	Please, revise the output to make sure that you are actually pushing to the right repo and only after that execute the following to force (--force-with-lease) git to change the history.
 	
 	~~~~~~~~~~~~~~~~~~~~~
-	git push -f origin
+	git push --force-with-lease origin
 	~~~~~~~~~~~~~~~~~~~~~
 	
 	We recommend to do push in two steps intuitionally to prevent unwanted changes.
-Even if you are 100% sure, ALWAYS first execute "git push" without "-f". Revise the output. Check that the repo you are pushing is the the one you want and only then force push with "-f".
+Even if you are 100% sure, ALWAYS first execute "git push" without "--force-with-lease". Revise the output. Check that the repo you are pushing is the the one you want and only then force push with "--force-with-lease".
     
 ### Request to pull
 
@@ -257,7 +257,7 @@ Even if you are 100% sure, ALWAYS first execute "git push" without "-f". Revise 
 1. Push your changes to your remote repo. You may need to use "push -f" since after the rebase your remote repo can be diverged from the local repo. 
 
     ~~~~~~~~~~~~~~~~~~~~~    
-    git push -f origin
+    git push --force-with-lease origin
     ~~~~~~~~~~~~~~~~~~~~~
 
 1. Request to pull. Let your release manager know that you want your patch to be merged with the central dev branch. Use a simple email or github to send a pull request.
