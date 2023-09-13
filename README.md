@@ -33,6 +33,13 @@
 
 # Introduction
 
+> [!NOTE]  
+> Test message
+>
+
+> **NOTE**
+> Highlights information that users should take into account, even when skimming.
+
 This document describes a git workflow for development teams. The workflow aims to provide:
 
 - uninterruptible development,
