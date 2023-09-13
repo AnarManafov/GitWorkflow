@@ -33,13 +33,6 @@
 
 # Introduction
 
-> [!NOTE]  
-> Test message
->
-
-> **NOTE**
-> Highlights information that users should take into account, even when skimming.
-
 This document describes a git workflow for development teams. The workflow aims to provide:
 
 - uninterruptible development,
@@ -48,25 +41,25 @@ This document describes a git workflow for development teams. The workflow aims 
 - a multilevel possibility to recover from errors/mistakes before changes come into the master,
 - a clean, leaner history of the master branch without merge commits and other unwanted garbage.
 
-**Note**  
-Treat public history as immutable, atomic, and easy to follow.  
-Treat private history as disposable and malleable.
+> [!IMPORTANT]
+> Treat public history as immutable, atomic, and easy to follow.
+> Treat private history as disposable and malleable.
 
 ---
 
 # Requirements and Tips
 
 - Use one branch per feature/bug (contained development).
-   Every tick/task/feature MUST be implemented on a separate branch. Basically each JIRA ticket should be represented by at least one branch.
+  Every tick/task/feature MUST be implemented on a separate branch. Basically each JIRA ticket should be represented by at least one branch.
 - Only release managers are allowed to work on the central master branch.
 - Cherry picking MUST not be used by any means.
-- A good use of branches should prevent the need of "git cherry-pick".
+- A good use of branches should prevent the need of `git cherry-pick`.
 - DO NOT create very large repositories.
 - DO NOT commit large binary files or make sure you git repo supports [git LFS](https://git-lfs.com).
 - DO NOT commit any file, which can be regenerated or which is generated automatically by your development environment.
 - Remember to rebase your feature branch before merging it to the Development branch.
 - Specify the origin and branch when pushing (might avoid mistakes).
-- Use "git pull --rebase" in order to avoid merges from upstream commits.
+- Use `git pull --rebase` in order to avoid merges from upstream commits.
 
 # The workflow
 
@@ -106,7 +99,7 @@ Contains all the stable, released code.
 - No development should be performed on the master branch directly.
 - Only release managers have write permissions on it.
 - The master branch rolls only forward, no history changes are allowed on the master branch.
-- All new patches are introduced in the master branch only via ```git merge --ff-only```.
+- All new patches are introduced in the master branch only via `git merge --ff-only`.
 
 ### dev branch
 
@@ -231,9 +224,9 @@ As often as possible sync your feature branch with the central dev.
     ```
 
    - Resolve conflicts if any.
-   - Stage each modified file ```git add <file_name>``` after conflicts are resolved.
-   - You can also use ```git checkout --theirs/--ours <filename>``` to help to resolve conflicts.
-   - Use ```git rebase --continue``` to continue rebasing.
+   - Stage each modified file `git add <file_name>` after conflicts are resolved.
+   - You can also use `git checkout --theirs/--ours <filename>` to help to resolve conflicts.
+   - Use `git rebase --continue` to continue rebasing.
 
 1. push to you remote clone:
 
@@ -243,16 +236,16 @@ As often as possible sync your feature branch with the central dev.
 
     Most probably your local repo and the remote repo will be diverged at this point. Git will warn you that you are about to change the history and will not allow you to push.
 
-    Please, revise the output to make sure that you are actually pushing to the right repo and only after that execute the following to force (--force-with-lease) git to change the history.
+    Please, revise the output to make sure that you are actually pushing to the right repo and only after that execute the following to force (`--force-with-lease`) git to change the history.
 
     ```shell
     git push --force-with-lease origin
     ```
 
     We recommend to do push in two steps intuitionally to prevent unwanted changes.  
-    Even if you are 100% sure, ALWAYS first execute ```git push``` without ```--force-with-lease```.
+    Even if you are 100% sure, ALWAYS first execute `git push` without `--force-with-lease`.
     Revise the output.  
-    Check that the repo you are pushing is the the one you want and only then force push with ```--force-with-lease```.
+    Check that the repo you are pushing is the the one you want and only then force push with `--force-with-lease`.
 
 ### Request to pull
 
@@ -265,9 +258,9 @@ As often as possible sync your feature branch with the central dev.
     ```
 
     - Resolve conflicts if any.
-    - Stage each modified file "git add <file_name>" after conflicts are resolved.
-    - You can also use "git checkout --theirs/--ours <filename>" to help to resolve conflicts.
-    - Use "git rebase --continue" to continue rebasing.
+    - Stage each modified file `git add <file_name>` after conflicts are resolved.
+    - You can also use `git checkout --theirs/--ours <filename>` to help to resolve conflicts.
+    - Use `git rebase --continue` to continue rebasing.
 
 1. Squash all of your commits. Once your code is perfect, clean up its history.
 
@@ -275,10 +268,12 @@ As often as possible sync your feature branch with the central dev.
     git rebase -i mainrepo/dev
     ```
 
-    **Note**  
-    It is very important for the history of the main repository that all of your commits are squashed. In the future nobody is interested to see your "cosmetic changes" commits or commits related to any other minor changes. The best way to introduce a feature is to introduce it as a patch. This is why, do squash all your commits into one, write a good proper comment before requesting to pull your code.**
+    > [!NOTE]
+    > It is very important for the history of the main repository that all of your commits are squashed.
+    > In the future nobody is interested to see your "cosmetic changes" commits or commits related to any other minor changes. The best way to introduce a feature is to introduce it as a patch.
+    > This is why, do squash all your commits into one, write a good proper comment before requesting to pull your code.
 
-1. Push your changes to your remote repo. You may need to use "push -f" since after the rebase your remote repo can be diverged from the local repo.
+1. Push your changes to your remote repo. You may need to use `push -f` since after the rebase your remote repo can be diverged from the local repo.
 
     ```shell
     git push --force-with-lease origin
@@ -286,8 +281,8 @@ As often as possible sync your feature branch with the central dev.
 
 1. Request to pull. Let your release manager know that you want your patch to be merged with the central dev branch. Use a simple email or github to send a pull request.
 
-**Note**  
-Stop working on the featureXXX branch, after you sent a request to pull. Create a new branch for any other feature/ticket/bug.**
+> [!NOTE]
+> Stop working on the featureXXX branch, after you sent a request to pull. Create a new branch for any other feature/ticket/bug.
 
 ### Create patches
 
