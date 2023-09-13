@@ -42,7 +42,7 @@ This document describes a git workflow for development teams. The workflow aims 
 - a clean, leaner history of the master branch without merge commits and other unwanted garbage.
 
 > [!IMPORTANT]
-> Treat public history as immutable, atomic, and easy to follow.
+> Treat public history as immutable, atomic, and easy to follow.  
 > Treat private history as disposable and malleable.
 
 ---
