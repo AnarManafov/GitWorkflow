@@ -118,34 +118,121 @@ git config --global init.defaultBranch master
 # The Workflow
 
 ```mermaid
-graph TD
-    M1[master: v1.0.0] --> D1[develop]
-    D1 --> F1[feature/ABC-123]
-    F1 --> F2[Work & commits]
-    F2 --> F3[Rebase from develop]
-    F3 --> F4[Squash commits]
-    F4 --> D2[develop: merge FF]
+gitGraph
+  %% Baseline on master
+  commit id: "init"
+  branch master
+  checkout master
+  commit id: "release-line"
+
+  %% Develop created from master
+  branch develop
+  checkout develop
+  commit id: "dev-1"
+  commit id: "dev-2"
+
+  %% Feature X (long-running), periodically rebased (conceptually)
+  branch feature/x
+  checkout feature/x
+  commit id: "fx-1"
+  commit id: "fx-2"
+  checkout develop
+  commit id: "dev-3"
+  checkout feature/x
+  commit id: "rebased & squashed"
+  checkout develop
+  merge feature/x tag: "FF merge to develop"
+
+  %% Feature 1, rebased before merge (FF-only into develop)
+  branch feature/1
+  checkout feature/1
+  commit id: "f1-1"
+  commit id: "f1-2"
+  checkout develop
+  commit id: "dev-4"
+  checkout feature/1
+  commit id: "rebased & squashed"
+  checkout develop
+  merge feature/1 tag: "FF merge to develop"
+
+  %% Release v1.0 (RC branch with fixes only)
+  branch release/v1.0
+  checkout release/v1.0
+  commit id: "RC: fixes only"
+  checkout master
+  merge release/v1.0
+  commit id: "v1.0" tag: "v1.0"
+
+  %% Next cycle leading to v2.0
+  checkout develop
+  commit id: "dev-5"
+  commit id: "dev-6"
+  branch release/v2.0
+  checkout release/v2.0
+  commit id: "RC: fixes only"
+  checkout master
+  merge release/v2.0
+  commit id: "v2.0" tag: "v2.0"
+
+  %% Next cycle leading to v3.0
+  checkout develop
+  commit id: "dev-7"
+  commit id: "dev-8"
+  branch release/v3.0
+  checkout release/v3.0
+  commit id: "RC: fixes only"
+  checkout master
+  merge release/v3.0
+  commit id: "v3.0" tag: "v3.0"
+
+  %% HotFix from v3.0 -> v3.1, then sync back to develop
+  checkout master
+  branch hotfix/v3.1
+  checkout hotfix/v3.1
+  commit id: "critical hotfix"
+  checkout master
+  merge hotfix/v3.1
+  commit id: "v3.1" tag: "v3.1"
+
+  %% Sync develop with master after hotfix
+  checkout develop
+  merge master tag: "sync with master"
+```
+
+> **Note**: If the gitgraph doesn't render in your viewer, here's an alternative representation:
+
+```mermaid
+graph LR
+    subgraph "Long-term Branches"
+        M[master<br/>🔴 Production Ready]
+        D[develop<br/>🟢 Integration Branch]
+    end
     
-    D2 --> R1[release/v1.1.0]
-    R1 --> R2[Bug fixes only]
-    R2 --> M2[master: v1.1.0]
-    M2 --> D3[develop: rebase]
+    subgraph "Temporary Branches"
+        F1[feature/ABC-123<br/>🟣 New Feature]
+        F2[feature/DEF-456<br/>🟣 Bug Fix]
+        R[release/v1.1.0<br/>🟡 Release Prep]
+        H[hotfix/v1.0.1<br/>🟠 Critical Fix]
+    end
     
-    M1 --> H1[hotfix/v1.0.1]
-    H1 --> H2[Critical fix]
-    H2 --> M3[master: v1.0.1]
-    M3 --> D4[develop: rebase]
+    subgraph "Flow Direction"
+        F1 -->|1. Rebase & Squash| D
+        F2 -->|1. Rebase & Squash| D
+        D -->|2. Create when ready| R
+        R -->|3. Fast-forward merge| M
+        M -->|4. Production Tag| TAG1[v1.1.0 🏷️]
+        M -->|5. Emergency fix| H
+        H -->|6. Fast-forward merge| M
+        M -->|7. Production Tag| TAG2[v1.0.1 🏷️]
+        M -.->|Always sync back| D
+    end
     
-    style M1 fill:#ffcdd2
-    style M2 fill:#ffcdd2
-    style M3 fill:#ffcdd2
-    style D1 fill:#c8e6c9
-    style D2 fill:#c8e6c9
-    style D3 fill:#c8e6c9
-    style D4 fill:#c8e6c9
-    style F1 fill:#e1bee7
-    style R1 fill:#fff3e0
-    style H1 fill:#ffecb3
+    style M fill:#ffcdd2,stroke:#d32f2f,stroke-width:3px
+    style D fill:#c8e6c9,stroke:#388e3c,stroke-width:3px
+    style F1 fill:#e1bee7,stroke:#7b1fa2
+    style F2 fill:#e1bee7,stroke:#7b1fa2
+    style R fill:#fff3e0,stroke:#f57c00
+    style H fill:#ffecb3,stroke:#ffa000
 ```
 
 ## Branch Flow Visualization
@@ -302,10 +389,10 @@ git rebase master
 
 ## Team Roles
 
-| Role | Permissions | Responsibilities |
-|------|-------------|------------------|
-| **Developer** | Read: `master`, `develop`<br>Write: `feature/*`, `bugfix/*` | Feature development, bug fixes, code reviews |
-| **Release Manager** | Read/Write: All branches | Integration, releases, hotfixes, branch management |
+| Role                | Permissions                                                 | Responsibilities                                   |
+| ------------------- | ----------------------------------------------------------- | -------------------------------------------------- |
+| **Developer**       | Read: `master`, `develop`<br>Write: `feature/*`, `bugfix/*` | Feature development, bug fixes, code reviews       |
+| **Release Manager** | Read/Write: All branches                                    | Integration, releases, hotfixes, branch management |
 
 ---
 
