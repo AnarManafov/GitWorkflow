@@ -109,7 +109,7 @@ git config --global core.ignorecase false
 # Better merge conflict resolution
 git config --global merge.conflictstyle diff3
 
-# Default branch name (optional - can keep as main for new repos)
+# Default branch name for this repo
 git config --global init.defaultBranch master
 ```
 
@@ -155,6 +155,10 @@ gitGraph
   checkout develop
   merge feature/1 tag: "FF merge to develop"
 
+  %% Periodic FF sync: develop -> master before release
+  checkout master
+  merge develop tag: "FF: sync dev -> master"
+
   %% Release v1.0 (RC branch with fixes only)
   branch release/v1.0
   checkout release/v1.0
@@ -163,10 +167,16 @@ gitGraph
   merge release/v1.0
   commit id: "v1.0" tag: "v1.0"
 
+  %% Rebase develop on master after release
+  checkout develop
+  merge master tag: "rebase/sync develop on master"
+
   %% Next cycle leading to v2.0
   checkout develop
   commit id: "dev-5"
   commit id: "dev-6"
+  checkout master
+  merge develop tag: "FF: sync dev -> master"
   branch release/v2.0
   checkout release/v2.0
   commit id: "RC: fixes only"
@@ -174,16 +184,26 @@ gitGraph
   merge release/v2.0
   commit id: "v2.0" tag: "v2.0"
 
+  %% Rebase develop on master after release
+  checkout develop
+  merge master tag: "rebase/sync develop on master"
+
   %% Next cycle leading to v3.0
   checkout develop
   commit id: "dev-7"
   commit id: "dev-8"
+  checkout master
+  merge develop tag: "FF: sync dev -> master"
   branch release/v3.0
   checkout release/v3.0
   commit id: "RC: fixes only"
   checkout master
   merge release/v3.0
   commit id: "v3.0" tag: "v3.0"
+
+  %% Rebase develop on master after release
+  checkout develop
+  merge master tag: "rebase/sync develop on master"
 
   %% HotFix from v3.0 -> v3.1, then sync back to develop
   checkout master
@@ -238,38 +258,57 @@ graph LR
 ## Branch Flow Visualization
 
 ```mermaid
-flowchart LR
-    subgraph "Developer Workflow"
-        DEV[👨‍💻 Developer] --> CREATE[Create Feature Branch]
-        CREATE --> WORK[Develop Feature]
-        WORK --> REBASE[Rebase from develop]
-        REBASE --> SQUASH[Squash Commits]
-        SQUASH --> PR[Create Pull Request]
+%%{init: {'flowchart': {'rankSpacing': 70, 'nodeSpacing': 35, 'curve': 'step'}}}%%
+flowchart TB
+    %% Arrange three vertical swimlanes for better readability
+    subgraph DEV[Developer Workflow]
+      direction TB
+      DEV1[Create Feature Branch]
+      DEV2[Develop Feature]
+      DEV3[Rebase from develop]
+      DEV4[Squash Commits]
+      DEV5[Create Pull Request]
+      DEV1 --> DEV2 --> DEV3 --> DEV4 --> DEV5
     end
-    
-    subgraph "Release Manager Workflow"
-        PR --> REVIEW[🔍 Review PR]
-        REVIEW --> MERGE[Fast-Forward Merge]
-        MERGE --> RELEASE{Ready for Release?}
-        RELEASE -->|Yes| RC[Create Release Branch]
-        RELEASE -->|No| CREATE
-        RC --> TEST[Testing & Bug Fixes]
-        TEST --> PROD[Deploy to Production]
-        PROD --> TAG[🏷️ Tag Release]
-        TAG --> CLEANUP[Clean up branches]
+
+    subgraph RM[Release Manager Workflow]
+      direction TB
+      RM1[Review PR]
+      RM2[Fast-Forward Merge to develop]
+      RM3{Ready for Release?}
+      RM4[Create Release Branch]
+      RM5[Testing & Bug Fixes Only]
+      RM6[Merge to master - FF only]
+      RM7[Tag Release]
+      RM8[Clean up branches]
+      RM1 --> RM2 --> RM3
+      RM3 -- Yes --> RM4 --> RM5 --> RM6 --> RM7 --> RM8
+      RM3 -- No --> DEV1
     end
-    
-    subgraph "Hotfix Process"
-        ISSUE[🚨 Critical Issue] --> HOTFIX[Create Hotfix Branch]
-        HOTFIX --> FIX[Implement Fix]
-        FIX --> DEPLOY[Deploy Hotfix]
-        DEPLOY --> HTAG[🏷️ Tag Hotfix]
-        HTAG --> SYNC[Sync develop]
+
+    subgraph HF[Hotfix Process]
+      direction TB
+      HF1[Critical Issue]
+      HF2[Create Hotfix Branch]
+      HF3[Implement Fix]
+      HF4[Merge to master - FF only]
+      HF5[Tag Hotfix]
+      HF6[Sync develop]
+      HF1 --> HF2 --> HF3 --> HF4 --> HF5 --> HF6
     end
-    
-    style DEV fill:#e3f2fd
-    style REVIEW fill:#fff3e0
-    style ISSUE fill:#ffebee
+
+    %% Light guidance edges to show handoffs (non-blocking)
+    DEV5 -.-> RM1
+    RM7 -.-> HF1
+
+    %% Styling
+    class DEV1,DEV2,DEV3,DEV4,DEV5 dev;
+    class RM1,RM2,RM3,RM4,RM5,RM6,RM7,RM8 rm;
+    class HF1,HF2,HF3,HF4,HF5,HF6 hf;
+
+    classDef dev fill:#e3f2fd,stroke:#64b5f6,stroke-width:2px,color:#0d47a1;
+    classDef rm fill:#fff3e0,stroke:#ffb74d,stroke-width:2px,color:#e65100;
+    classDef hf fill:#ffebee,stroke:#ef9a9a,stroke-width:2px,color:#b71c1c;
 ```
 
 ## Core Principles
@@ -291,6 +330,7 @@ Understanding the difference between these types of changes is crucial for follo
 The **master branch** contains only stable, production-ready code.
 
 **Characteristics:**
+
 - All production releases are tagged here
 - Always buildable and deployable
 - No direct development allowed
@@ -299,6 +339,7 @@ The **master branch** contains only stable, production-ready code.
 - New changes enter only via fast-forward merges
 
 **Protection Rules:**
+
 ```bash
 # Only fast-forward merges allowed
 git merge --ff-only feature-branch
@@ -306,15 +347,17 @@ git merge --ff-only feature-branch
 
 ### develop branch
 
-The **develop branch** is the main development integration point.
+The **develop branch** is the primary development integration point.
 
 **Characteristics:**
+
 - Branched from the latest `master`
 - Integration point for all feature branches
 - Periodically rebased from `master` when releases are completed
 - Contains the latest development changes destined for the next release
 
 **Maintenance:**
+
 ```bash
 # Keep develop updated with master after each release
 git switch develop
@@ -326,17 +369,20 @@ git rebase master
 **Release branches** are temporary branches for release preparation.
 
 **Purpose:**
+
 - Enables feature freeze while allowing continued development
 - Provides isolated environment for release testing and bug fixes
 - Only critical bug fixes allowed (no new features)
 
 **Lifecycle:**
+
 1. Created from `develop` when ready for release
 2. Bug fixes applied during testing phase
 3. Merged to `master` when release is complete
 4. Deleted after successful merge
 
 **Example:**
+
 ```bash
 # Create release branch
 git switch -c release/v1.3.0 develop
@@ -353,12 +399,14 @@ git branch -d release/v1.3.0
 **Hotfix branches** handle critical production issues.
 
 **Characteristics:**
+
 - Created from the affected production tag on `master`
 - Contains only the minimal fix for the critical issue
 - Merged directly back to `master`
 - `develop` branch must be rebased after hotfix integration
 
 **Example:**
+
 ```bash
 # Create hotfix from production tag
 git switch -c hotfix/v1.2.3-critical-fix v1.2.2
@@ -378,10 +426,12 @@ git rebase master
 **Feature branches** are where individual development work happens.
 
 **Naming Convention:**
+
 - `feature/TICKET-123-short-description`
 - `bugfix/TICKET-456-fix-login-issue`
 
 **Best Practices:**
+
 - Created from latest `develop`
 - Regularly rebased against `develop`
 - Commits squashed before integration
@@ -389,9 +439,10 @@ git rebase master
 
 ## Team Roles
 
+ 
 | Role                | Permissions                                                 | Responsibilities                                   |
 | ------------------- | ----------------------------------------------------------- | -------------------------------------------------- |
-| **Developer**       | Read: `master`, `develop`<br>Write: `feature/*`, `bugfix/*` | Feature development, bug fixes, code reviews       |
+| **Developer**       | Read: `master`, `develop`; Write: `feature/*`, `bugfix/*` | Feature development, bug fixes, code reviews       |
 | **Release Manager** | Read/Write: All branches                                    | Integration, releases, hotfixes, branch management |
 
 ---
@@ -423,7 +474,7 @@ git config --global merge.conflictstyle diff3
 
 ### 2. Fork and Clone
 
-1. **Fork the main repository** on GitHub/GitLab
+1. **Fork the central repository** on GitHub/GitLab
 2. **Clone your fork locally**:
 
 ```bash
@@ -433,10 +484,10 @@ cd PROJECT_NAME
 
 ### 3. Set Up Remotes
 
-Add the main repository as your upstream remote:
+Add the central repository as your upstream remote:
 
 ```bash
-# Add upstream remote (main repository)
+# Add upstream remote (central repository)
 git remote add upstream https://github.com/ORGANIZATION/PROJECT_NAME.git
 
 # Fetch all branches
@@ -584,7 +635,7 @@ In the interactive editor:
 
 **Example squash result:**
 
-```
+```text
 Add user authentication system
 
 - Implement JWT token generation and validation
@@ -603,7 +654,7 @@ Closes ABC-123
 git push --force-with-lease origin feature/ABC-123-user-authentication
 ```
 
-Then create a pull request from your fork to the main repository's `develop` branch.
+Then create a pull request from your fork to the central repository's `develop` branch.
 
 **Pull Request Guidelines:**
 
@@ -623,7 +674,7 @@ This prevents complications during the review and merge process.
 
 # Release Manager Workflows
 
-Release managers have write access to the main repository and are responsible for integrating changes and managing releases.
+Release managers have write access to the central repository and are responsible for integrating changes and managing releases.
 
 ## Processing Pull Requests
 
@@ -632,11 +683,13 @@ Release managers have write access to the main repository and are responsible fo
 Most Git platforms (GitHub, GitLab) provide built-in support for rebase-based workflows:
 
 **GitHub:**
+
 - Use "Rebase and merge" option for pull requests
 - Enable "Require linear history" branch protection
 - Set up automated checks before allowing merge
 
 **GitLab:**
+
 - Configure "Fast-forward merge" in project settings
 - Use merge request pipelines for automated testing
 
@@ -662,11 +715,12 @@ git merge --ff-only dev-john/feature/ABC-123-user-auth
 ```
 
 **If fast-forward fails:**
+
 - Request the developer to rebase their branch and resubmit
 - The merge should always be fast-forward only
 
 ```bash
-# 5. Push to main repository (if merge succeeded)
+# 5. Push to central repository (if merge succeeded)
 git push upstream develop
 ```
 
@@ -680,7 +734,7 @@ When `develop` contains all features for the next release:
 # Create release branch from develop
 git switch -c release/v1.3.0 develop
 
-# Push to main repository
+# Push to central repository
 git push upstream release/v1.3.0
 ```
 
@@ -715,7 +769,7 @@ git tag -a v1.3.0 -m "Release version 1.3.0
 - Fix: Memory leak in data processor
 - Fix: Login timeout issues"
 
-# 3. Push to main repository
+# 3. Push to central repository
 git push upstream master
 git push upstream v1.3.0
 
@@ -764,7 +818,7 @@ git merge --ff-only hotfix/v1.2.3-security-patch
 # 2. Tag the hotfix release
 git tag -a v1.2.3 -m "Hotfix v1.2.3: Security patch"
 
-# 3. Push to main repository
+# 3. Push to central repository
 git push upstream master
 git push upstream v1.2.3
 
