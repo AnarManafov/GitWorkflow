@@ -6,8 +6,14 @@
 
 - [Introduction](#introduction)
 - [Quick Reference](#quick-reference)
+  - [Common Commands](#common-commands)
+  - [Branch Naming Conventions](#branch-naming-conventions)
 - [Prerequisites and Best Practices](#prerequisites-and-best-practices)
+  - [Development Guidelines](#development-guidelines)
+  - [Repository Hygiene](#repository-hygiene)
+  - [Git Configuration](#git-configuration)
 - [The Workflow](#the-workflow)
+  - [Branch Flow Visualization](#branch-flow-visualization)
   - [Core Principles](#core-principles)
   - [Branch Types](#branch-types)
     - [master branch](#master-branch)
@@ -18,18 +24,51 @@
   - [Team Roles](#team-roles)
 - [Getting Started](#getting-started)
   - [Initial Setup](#initial-setup)
+    - [1. Configure Git](#1-configure-git)
+    - [2. Fork and Clone](#2-fork-and-clone)
+    - [3. Set Up Remotes](#3-set-up-remotes)
+    - [4. Create Local Development Branch](#4-create-local-development-branch)
 - [Developer Workflows](#developer-workflows)
   - [Working on Features](#working-on-features)
+    - [1. Create a Feature Branch](#1-create-a-feature-branch)
+    - [2. Develop Your Feature](#2-develop-your-feature)
   - [Keeping Your Branch Updated](#keeping-your-branch-updated)
   - [Submitting Your Work](#submitting-your-work)
+    - [1. Final Preparation](#1-final-preparation)
+    - [2. Squash Your Commits](#2-squash-your-commits)
+    - [3. Create Pull Request](#3-create-pull-request)
+    - [4. Stop Working on the Branch](#4-stop-working-on-the-branch)
 - [Release Manager Workflows](#release-manager-workflows)
   - [Processing Pull Requests](#processing-pull-requests)
+    - [Modern Approach: Platform Integration](#modern-approach-platform-integration)
+    - [Manual Processing (if needed)](#manual-processing-if-needed)
   - [Creating Releases](#creating-releases)
+    - [1. Create Release Branch](#1-create-release-branch)
+    - [2. Release Testing and Bug Fixes](#2-release-testing-and-bug-fixes)
+    - [3. Complete the Release](#3-complete-the-release)
   - [Managing Hotfixes](#managing-hotfixes)
+    - [1. Create Hotfix Branch](#1-create-hotfix-branch)
+    - [2. Test and Deploy Hotfix](#2-test-and-deploy-hotfix)
+    - [3. Integrate Hotfix](#3-integrate-hotfix)
 - [Advanced Topics](#advanced-topics)
   - [Recovering from Upstream Rebases](#recovering-from-upstream-rebases)
+    - [The Problem](#the-problem)
+    - [The Solution](#the-solution)
+    - [Prevention](#prevention)
   - [Working with Patches](#working-with-patches)
+    - [Creating Patches](#creating-patches)
+    - [Applying Patches](#applying-patches)
 - [Modern Git Features](#modern-git-features)
+  - [Modern Commands](#modern-commands)
+  - [Enhanced Safety](#enhanced-safety)
+  - [Productivity Enhancements](#productivity-enhancements)
+  - [Integration with Modern Tools](#integration-with-modern-tools)
+    - [GitHub CLI](#github-cli)
+    - [Improved Workflow Commands](#improved-workflow-commands)
+  - [Platform-Specific Features](#platform-specific-features)
+    - [GitHub Features](#github-features)
+    - [GitLab Features](#gitlab-features)
+  - [Conclusion](#conclusion)
 
 # Introduction
 
@@ -118,11 +157,15 @@ git config --global init.defaultBranch master
 # The Workflow
 
 ```mermaid
+---
+config:
+  theme: 'base'
+  gitGraph:
+    mainBranchName: 'master'
+---
 gitGraph
-  %% Baseline on master
+  %% Start with commits on the main branch (automatically named master)
   commit id: "init"
-  branch master
-  checkout master
   commit id: "release-line"
 
   %% Develop created from master
@@ -155,7 +198,7 @@ gitGraph
   checkout develop
   merge feature/1 tag: "FF merge to develop"
 
-  %% Periodic FF sync: develop -> master before release
+  %% Switch back to main branch (which is master due to our theme)
   checkout master
   merge develop tag: "FF: sync dev -> master"
 
@@ -440,10 +483,10 @@ git rebase master
 ## Team Roles
 
  
-| Role                | Permissions                                                 | Responsibilities                                   |
-| ------------------- | ----------------------------------------------------------- | -------------------------------------------------- |
+| Role                | Permissions                                               | Responsibilities                                   |
+| ------------------- | --------------------------------------------------------- | -------------------------------------------------- |
 | **Developer**       | Read: `master`, `develop`; Write: `feature/*`, `bugfix/*` | Feature development, bug fixes, code reviews       |
-| **Release Manager** | Read/Write: All branches                                    | Integration, releases, hotfixes, branch management |
+| **Release Manager** | Read/Write: All branches                                  | Integration, releases, hotfixes, branch management |
 
 ---
 
