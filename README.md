@@ -301,7 +301,14 @@ graph LR
 ## Branch Flow Visualization
 
 ```mermaid
-%%{init: {'flowchart': {'rankSpacing': 70, 'nodeSpacing': 35, 'curve': 'step'}}}%%
+---
+config:
+  theme: 'base'
+  flowchart:
+    rankSpacing: 70
+    nodeSpacing: 35
+    curve: 'step'
+---
 flowchart TB
     %% Arrange three vertical swimlanes for better readability
     subgraph DEV[Developer Workflow]
@@ -367,6 +374,41 @@ Understanding the difference between these types of changes is crucial for follo
   - These bypass the normal development cycle for urgent production issues
 
 ## Branch Types
+
+```mermaid
+---
+config:
+  theme: 'base'
+  themeVariables:
+    fontSize: '14px'
+---
+graph TB
+    subgraph "Long-term Branches"
+        M[master<br/>🔴 Production<br/>• Always stable<br/>• Tagged releases<br/>• No direct commits<br/>• FF merges only]
+        D[develop<br/>🟢 Integration<br/>• Next release prep<br/>• Feature integration<br/>• Rebased from master<br/>• After releases]
+    end
+    
+    subgraph "Temporary Branches"
+        F[feature/*<br/>🟣 Feature Work<br/>• From develop<br/>• Regular rebasing<br/>• Squashed commits<br/>• Deleted after merge]
+        R[release/*<br/>🟡 Release Prep<br/>• From develop<br/>• Bug fixes only<br/>• Testing phase<br/>• Merge to master]
+        H[hotfix/*<br/>🟠 Critical Fixes<br/>• From master tag<br/>• Minimal changes<br/>• Direct to master<br/>• Emergency patches]
+    end
+    
+    M -.->|"creates"| R
+    D -->|"when ready"| R
+    R -->|"FF merge"| M
+    M -->|"emergency"| H
+    H -->|"FF merge"| M
+    M -.->|"sync after hotfix"| D
+    D -->|"FF merge after rebase"| F
+    F -->|"rebase & squash"| D
+    
+    style M fill:#ffcdd2,stroke:#d32f2f,stroke-width:3px
+    style D fill:#c8e6c9,stroke:#388e3c,stroke-width:3px
+    style F fill:#e1bee7,stroke:#7b1fa2,stroke-width:2px
+    style R fill:#fff3e0,stroke:#f57c00,stroke-width:2px
+    style H fill:#ffecb3,stroke:#ffa000,stroke-width:2px
+```
 
 ### master branch
 
@@ -494,6 +536,33 @@ git rebase master
 
 ## Initial Setup
 
+```mermaid
+---
+config:
+  theme: 'base'
+  flowchart:
+    rankSpacing: 50
+    nodeSpacing: 30
+---
+flowchart TD
+    A[🔧 Configure Git<br/>Set identity & preferences] --> B[🍴 Fork Repository<br/>Create your copy on platform]
+    B --> C[📥 Clone Locally<br/>git clone your-fork-url]
+    C --> D[🔗 Add Upstream Remote<br/>git remote add upstream central-repo]
+    D --> E[📡 Fetch All Branches<br/>git fetch upstream]
+    E --> F[🌿 Create Local Develop<br/>git switch -c develop upstream/develop]
+    F --> G[📤 Push & Track<br/>git push -u origin develop]
+    G --> H[✅ Ready to Work!<br/>Start creating feature branches]
+    
+    style A fill:#e3f2fd,stroke:#1976d2,stroke-width:2px
+    style B fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px
+    style C fill:#e8f5e8,stroke:#388e3c,stroke-width:2px
+    style D fill:#fff3e0,stroke:#f57c00,stroke-width:2px
+    style E fill:#fce4ec,stroke:#c2185b,stroke-width:2px
+    style F fill:#e0f2f1,stroke:#00695c,stroke-width:2px
+    style G fill:#f1f8e9,stroke:#558b2f,stroke-width:2px
+    style H fill:#e8f5e8,stroke:#2e7d32,stroke-width:3px
+```
+
 This setup process applies to both developers and release managers.
 
 ### 1. Configure Git
@@ -526,6 +595,35 @@ cd PROJECT_NAME
 ```
 
 ### 3. Set Up Remotes
+
+```mermaid
+---
+config:
+  theme: 'base'
+---
+graph LR
+    subgraph "GitHub/GitLab Platform"
+        CENTRAL[🏢 Central Repository<br/>ORGANIZATION/PROJECT<br/>upstream remote]
+        FORK[👤 Your Fork<br/>YOUR_USERNAME/PROJECT<br/>origin remote]
+    end
+    
+    subgraph "Your Local Machine"
+        LOCAL[💻 Local Repository<br/>Working directory]
+    end
+    
+    CENTRAL -.->|"fork"| FORK
+    FORK -->|"git clone"| LOCAL
+    CENTRAL -.->|"git remote add upstream"| LOCAL
+    FORK <-->|"origin (default)"| LOCAL
+    
+    LOCAL -->|"git push origin"| FORK
+    LOCAL -->|"git fetch upstream"| CENTRAL
+    FORK -.->|"Pull Request"| CENTRAL
+    
+    style CENTRAL fill:#ffcdd2,stroke:#d32f2f,stroke-width:3px
+    style FORK fill:#e1bee7,stroke:#7b1fa2,stroke-width:2px
+    style LOCAL fill:#c8e6c9,stroke:#388e3c,stroke-width:3px
+```
 
 Add the central repository as your upstream remote:
 
@@ -769,6 +867,42 @@ git push upstream develop
 
 ## Creating Releases
 
+```mermaid
+---
+config:
+  theme: 'base'
+  flowchart:
+    rankSpacing: 60
+    nodeSpacing: 40
+---
+flowchart TD
+    A[📋 develop ready<br/>All features complete] --> B[🌿 Create Release Branch<br/>git switch -c release/v1.3.0 develop]
+    B --> C[🧪 Testing Phase<br/>QA testing and validation]
+    C --> D{🐛 Bugs Found?}
+    D -->|Yes| E[🔧 Apply Bug Fixes<br/>Critical fixes only]
+    E --> C
+    D -->|No| F[🎯 Switch to master<br/>git switch master]
+    F --> G[⚡ Fast-Forward Merge<br/>git merge --ff-only release/v1.3.0]
+    G --> H[🏷️ Tag Release<br/>git tag -a v1.3.0 -m Release notes]
+    H --> I[📤 Push Everything<br/>git push upstream master and tag]
+    I --> J[🔄 Update develop<br/>git switch develop and git rebase master]
+    J --> K[🧹 Cleanup<br/>Delete release branch]
+    K --> L[✅ Release Complete!<br/>Ready for next cycle]
+    
+    style A fill:#e3f2fd,stroke:#1976d2,stroke-width:2px
+    style B fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px
+    style C fill:#fff3e0,stroke:#f57c00,stroke-width:2px
+    style D fill:#ffecb3,stroke:#ffa000,stroke-width:2px
+    style E fill:#ffcdd2,stroke:#d32f2f,stroke-width:2px
+    style F fill:#e8f5e8,stroke:#388e3c,stroke-width:2px
+    style G fill:#e8f5e8,stroke:#388e3c,stroke-width:2px
+    style H fill:#e1bee7,stroke:#7b1fa2,stroke-width:2px
+    style I fill:#e0f2f1,stroke:#00695c,stroke-width:2px
+    style J fill:#f1f8e9,stroke:#558b2f,stroke-width:2px
+    style K fill:#fce4ec,stroke:#c2185b,stroke-width:2px
+    style L fill:#c8e6c9,stroke:#2e7d32,stroke-width:3px
+```
+
 ### 1. Create Release Branch
 
 When `develop` contains all features for the next release:
@@ -885,18 +1019,56 @@ Sometimes the upstream branch history needs to be changed (rebased, commits move
 
 **Before upstream rebase:**
 
-```text
-C0 ← C1 ← C2 ← C3 ← C4    (develop)
-          ↑
-          └─ cf1 ← cf2     (your feature branch)
+```mermaid
+---
+config:
+  theme: 'base'
+  gitGraph:
+    mainBranchName: 'develop'
+---
+gitGraph
+  commit id: "C0"
+  commit id: "C1"
+  commit id: "C2"
+  branch feature/ABC-123
+  checkout feature/ABC-123
+  commit id: "cf1"
+  commit id: "cf2"
+  checkout develop
+  commit id: "C3"
+  commit id: "C4"
 ```
 
 **After upstream rebase:**
 
-```text
-C0 ← C1x ← C2x ← C3x ← C4x (develop - rebased)
+```mermaid
+---
+config:
+  theme: 'base'
+  gitGraph:
+    mainBranchName: 'develop (rebased)'
+---
+gitGraph
+  commit id: "C0"
+  commit id: "C1x"
+  commit id: "C2x"
+  commit id: "C3x"
+  commit id: "C4x"
+```
 
-C0 ← C1 ← C2 ← cf1 ← cf2   (your feature branch - now orphaned)
+```mermaid
+---
+config:
+  theme: 'base'
+  gitGraph:
+    mainBranchName: 'feature/ABC-123 (orphaned)'
+---
+gitGraph
+  commit id: "C0"
+  commit id: "C1"
+  commit id: "C2"
+  commit id: "cf1"
+  commit id: "cf2"
 ```
 
 Git sees `C1`, `C2` as different from `C1x`, `C2x`, causing merge conflicts when rebasing.
@@ -924,6 +1096,29 @@ OLD_PARENT=$(git merge-base develop upstream/develop)
 # Rebase onto new parent  
 git rebase --onto upstream/develop $OLD_PARENT feature/ABC-123
 ```
+
+**After successful rebase:**
+
+```mermaid
+---
+config:
+  theme: 'base'
+  gitGraph:
+    mainBranchName: 'develop (rebased)'
+---
+gitGraph
+  commit id: "C0"
+  commit id: "C1x"
+  commit id: "C2x"
+  commit id: "C3x"
+  commit id: "C4x"
+  branch feature/ABC-123
+  checkout feature/ABC-123
+  commit id: "cf1"
+  commit id: "cf2"
+```
+
+Your feature commits (`cf1`, `cf2`) are now properly based on the rebased develop branch (`C1x`, `C2x`, etc.), eliminating the conflicts and maintaining a clean history.
 
 ### Prevention
 
