@@ -5,459 +5,920 @@
 **Table of Contents**
 
 - [Introduction](#introduction)
-- [Requirements and Tips](#requirements-and-tips)
-- [The workflow](#the-workflow)
-  - [Important](#important)
-  - [Branches](#branches)
+- [Quick Reference](#quick-reference)
+- [Prerequisites and Best Practices](#prerequisites-and-best-practices)
+- [The Workflow](#the-workflow)
+  - [Core Principles](#core-principles)
+  - [Branch Types](#branch-types)
     - [master branch](#master-branch)
-    - [dev branch](#dev-branch)
-    - [RC branch](#rc-branch)
-    - [HotFix branch](#hotfix-branch)
-    - [FEATURE/TICKET branches](#featureticket-branches)
-  - [Roles](#roles)
-- [User stories](#user-stories)
-  - [Developers](#developers)
-    - [Prepare the environment](#prepare-the-environment)
-    - [Create a feature branch](#create-a-feature-branch)
-    - [Sync your feature branch](#sync-your-feature-branch)
-    - [Request to pull](#request-to-pull)
-    - [Create patches](#create-patches)
-    - [Apply a patch](#apply-a-patch)
-  - [Release manager](#release-manager)
-    - [Prepare the environment](#prepare-the-environment-1)
-    - [Process pull requests](#process-pull-requests)
-    - [Prepare a Release Candidate](#prepare-a-release-candidate)
-    - [Hot Fixes](#hot-fixes)
-- [Tips and HOWTOs](#tips-and-howtos)
-  - [How to recover after upstream branch was rebased](#how-to-recover-after-upstream-branch-was-rebased)
+    - [develop branch](#develop-branch)
+    - [release branch](#release-branch)
+    - [hotfix branch](#hotfix-branch)
+    - [feature branches](#feature-branches)
+  - [Team Roles](#team-roles)
+- [Getting Started](#getting-started)
+  - [Initial Setup](#initial-setup)
+- [Developer Workflows](#developer-workflows)
+  - [Working on Features](#working-on-features)
+  - [Keeping Your Branch Updated](#keeping-your-branch-updated)
+  - [Submitting Your Work](#submitting-your-work)
+- [Release Manager Workflows](#release-manager-workflows)
+  - [Processing Pull Requests](#processing-pull-requests)
+  - [Creating Releases](#creating-releases)
+  - [Managing Hotfixes](#managing-hotfixes)
+- [Advanced Topics](#advanced-topics)
+  - [Recovering from Upstream Rebases](#recovering-from-upstream-rebases)
+  - [Working with Patches](#working-with-patches)
+- [Modern Git Features](#modern-git-features)
 
 # Introduction
 
-This document describes a git workflow for development teams. The workflow aims to provide:
+This document describes a **rebase-based Git workflow** designed for development teams who prioritize clean history and stable releases. This workflow provides:
 
-- uninterruptible development,
-- a stable and releasable at any time master,
-- a multilevel protection against conflicts,
-- a multilevel possibility to recover from errors/mistakes before changes come into the master,
-- a clean, leaner history of the master branch without merge commits and other unwanted garbage.
+- **Uninterrupted development** - Multiple developers can work simultaneously without blocking each other
+- **Always-stable master branch** - The master branch is always ready for production deployment
+- **Multi-layered conflict prevention** - Conflicts are resolved early in feature branches
+- **Error recovery at multiple levels** - Mistakes can be caught and fixed before reaching production
+- **Clean, linear history** - No merge commits cluttering the master branch timeline
 
 > [!IMPORTANT]
-> Treat public history as immutable, atomic, and easy to follow.  
-> Treat private history as disposable and malleable.
+> **Core Philosophy**: Treat public history as immutable and easy to follow. Treat private history as disposable and malleable.
 
 ---
 
-# Requirements and Tips
+# Quick Reference
 
-- Use one branch per feature/bug (contained development).
-  Every tick/task/feature MUST be implemented on a separate branch. Basically each JIRA ticket should be represented by at least one branch.
-- Only release managers are allowed to work on the central master branch.
-- Cherry picking MUST not be used by any means.
-- A good use of branches should prevent the need of `git cherry-pick`.
-- DO NOT create very large repositories.
-- DO NOT commit large binary files or make sure you git repo supports [git LFS](https://git-lfs.com).
-- DO NOT commit any file, which can be regenerated or which is generated automatically by your development environment.
-- Remember to rebase your feature branch before merging it to the Development branch.
-- Specify the origin and branch when pushing (might avoid mistakes).
-- Use `git pull --rebase` in order to avoid merges from upstream commits.
+## Common Commands
 
-# The workflow
+```bash
+# Start working on a new feature
+git switch -c feature/ABC-123 upstream/develop
 
-![Alt text](GitWorkflow_fig1.png)
+# Keep your feature branch updated
+git fetch upstream
+git rebase upstream/develop
 
-## Important
+# Submit your work (after squashing commits)
+git push --force-with-lease origin feature/ABC-123
 
-In your development process, you must strictly distinguish between Features, Fixes and Hot Fixes.
-
-- **Features**, **Fixes** - are patches, which can wait until the next release of the product. This is why they travail starting from private feature branches ---> the central dev branch ---> the central release branch ---> the central master
-- **Hot Fixes** - are the patches, which can't wait and must be applied directly on a release version of the product. This is why they have completely different path: a new private branch from the given tag on the central master  ---> central master.
-
-## Branches
-
-There are only a few long term branches - **master** and **dev**.  
-All other branches should be deleted as soon as their commits are merged into the master or you don't need them.
-
-Use the following command to find out branches, which a merged into the mainrepo/master:
-
-```shell
-git branch --merged mainrepo/master 
+# Clean up after merge
+git branch -d feature/ABC-123
+git push origin --delete feature/ABC-123
 ```
 
-or not merged:
+## Branch Naming Conventions
 
-```shell
-git branch --no-merged mainrepo/master 
+- **Features**: `feature/ABC-123-short-description`
+- **Hotfixes**: `hotfix/v1.2.3-critical-fix`
+- **Releases**: `release/v1.3.0`
+
+---
+
+# Prerequisites and Best Practices
+
+## Development Guidelines
+
+- **One branch per feature/bug** - Each ticket/task must be implemented on a separate branch
+- **Meaningful branch names** - Use descriptive names that include ticket numbers (e.g., `feature/ABC-123-user-authentication`)
+- **Regular synchronization** - Rebase your feature branch frequently to avoid large conflicts
+- **Clean commit history** - Squash related commits before submitting for review
+- **Atomic commits** - Each commit should represent a single logical change
+
+## Repository Hygiene
+
+- **No large repositories** - Keep repositories focused and manageable in size
+- **Use Git LFS** - For large binary files, enable [Git LFS](https://git-lfs.com)
+- **Exclude generated files** - Never commit files that can be regenerated (build artifacts, IDE files, etc.)
+- **Write access control** - Only release managers should have write access to `master` and `develop` branches
+
+## Git Configuration
+
+Set up these configurations for all team members:
+
+```bash
+# Enable automatic rebase for new branches
+git config --global branch.autosetuprebase always
+
+# Set your identity
+git config --global user.name "Your Full Name"
+git config --global user.email "your.email@company.com"
+
+# Case-sensitive file names (important for cross-platform work)
+git config --global core.ignorecase false
+
+# Better merge conflict resolution
+git config --global merge.conflictstyle diff3
+
+# Default branch name (optional - can keep as main for new repos)
+git config --global init.defaultBranch master
 ```
+
+---
+
+# The Workflow
+
+```mermaid
+graph TD
+    M1[master: v1.0.0] --> D1[develop]
+    D1 --> F1[feature/ABC-123]
+    F1 --> F2[Work & commits]
+    F2 --> F3[Rebase from develop]
+    F3 --> F4[Squash commits]
+    F4 --> D2[develop: merge FF]
+    
+    D2 --> R1[release/v1.1.0]
+    R1 --> R2[Bug fixes only]
+    R2 --> M2[master: v1.1.0]
+    M2 --> D3[develop: rebase]
+    
+    M1 --> H1[hotfix/v1.0.1]
+    H1 --> H2[Critical fix]
+    H2 --> M3[master: v1.0.1]
+    M3 --> D4[develop: rebase]
+    
+    style M1 fill:#ffcdd2
+    style M2 fill:#ffcdd2
+    style M3 fill:#ffcdd2
+    style D1 fill:#c8e6c9
+    style D2 fill:#c8e6c9
+    style D3 fill:#c8e6c9
+    style D4 fill:#c8e6c9
+    style F1 fill:#e1bee7
+    style R1 fill:#fff3e0
+    style H1 fill:#ffecb3
+```
+
+## Branch Flow Visualization
+
+```mermaid
+flowchart LR
+    subgraph "Developer Workflow"
+        DEV[👨‍💻 Developer] --> CREATE[Create Feature Branch]
+        CREATE --> WORK[Develop Feature]
+        WORK --> REBASE[Rebase from develop]
+        REBASE --> SQUASH[Squash Commits]
+        SQUASH --> PR[Create Pull Request]
+    end
+    
+    subgraph "Release Manager Workflow"
+        PR --> REVIEW[🔍 Review PR]
+        REVIEW --> MERGE[Fast-Forward Merge]
+        MERGE --> RELEASE{Ready for Release?}
+        RELEASE -->|Yes| RC[Create Release Branch]
+        RELEASE -->|No| CREATE
+        RC --> TEST[Testing & Bug Fixes]
+        TEST --> PROD[Deploy to Production]
+        PROD --> TAG[🏷️ Tag Release]
+        TAG --> CLEANUP[Clean up branches]
+    end
+    
+    subgraph "Hotfix Process"
+        ISSUE[🚨 Critical Issue] --> HOTFIX[Create Hotfix Branch]
+        HOTFIX --> FIX[Implement Fix]
+        FIX --> DEPLOY[Deploy Hotfix]
+        DEPLOY --> HTAG[🏷️ Tag Hotfix]
+        HTAG --> SYNC[Sync develop]
+    end
+    
+    style DEV fill:#e3f2fd
+    style REVIEW fill:#fff3e0
+    style ISSUE fill:#ffebee
+```
+
+## Core Principles
+
+Understanding the difference between these types of changes is crucial for following the correct workflow path:
+
+- **Features & Bug Fixes**: Changes that can wait for the next scheduled release
+  - Path: `feature branch` → `develop` → `release branch` → `master`
+  - These follow the full development cycle with proper testing and review
+
+- **Hotfixes**: Critical fixes that cannot wait for the next release
+  - Path: `hotfix branch` (from production tag) → `master`
+  - These bypass the normal development cycle for urgent production issues
+
+## Branch Types
 
 ### master branch
 
-Contains all the stable, released code.
-
-- All released versions of all modules should be tagged in the master.
-- No separate branches for the released versions.
-- The master branch is ready to build at any moment.
-- No development should be performed on the master branch directly.
-- Only release managers have write permissions on it.
-- The master branch rolls only forward, no history changes are allowed on the master branch.
-- All new patches are introduced in the master branch only via `git merge --ff-only`.
-
-### dev branch
-
-- The branch is inherited from the latest master.
-
-- The dev branch is a development mainstream.
-- A release manager defines a list of tasks for a development sprint. For each task, developers MUST create a separate branch inherited from the **dev** branch.
-- Should be rebased from the **master** each time **master** is changed.
-
-### RC branch
-
-RC or ReleaseCandidate branch is a temporary branch. This branch intends to provide uninterruptible development - to avoid such mails like "Please do not commit..., we freeze a branch" :).
-
-At the moment of a release, a release manager will branch from **dev** to create an **RC** branch to start a release procedure. It also means feature freeze on the **RC** branch and only bug fixes can be introduced on it - no commits with new features.
-
-While a release manager works on the **RC** branch, all developers continue developing in **dev** and in their feature branches - uninterruptible development.
-
-The branch should be deleted as soon as it has been merged with the **master**. Once the **RC** branch is merged into the **master**, the **dev** branch should be rebased from the **master**. The rebases might require [a parent commit change](#how-to-recover-after-upstream-branch-was-rebased), if git is not able to rebase automatically.
-
-### HotFix branch
-
-It is a branch for hot fixes. It should contain only urgent hot fixes for the released versions, which can't wait until the next scheduled release of the product.
-
-Once a hot fix is merged back in to the **master**, the **dev** branch should be rebased from the master to get new changes.
-
-The branch should be deleted as soon as merged with the master.
-
-### FEATURE/TICKET branches
-
-Each business or development task/ticket/feature should have at least one feature branch. Such branches must be rebased to **dev** as often as possible to simplify future merging.
-
-Rebasing is important to keep new commits together for possible tuning or squashing in the feature.
-
-Whenever a feature is ready (or a stable part of the feature) it can be merged with the **dev** branch.
-
-It is recommended to keep feature branches even after their merge with **dev**. It will simplify fine tuning in case if the feature represented by the branch will be reverted from the **dev** for additional development or fixes/corrections.
-
-Feature branches should be deleted as soon as their commits are merged into the **master** via the **dev** branch.
-
-## Roles
-
-Release manager (r/w: MASTER, DEV, RC)
-Developer (r/w: FEATURE(s), HOT FIX; read only: MASTER, DEV)
-
-# User stories
-
-In the following documentation we use:
-
-- **mainrepo_url** - the url of the main repo, which is restricted and managed by release managers only. Developers must not have write permissions on it.
-- **mainrepo** - the name of the main repo.
-- **url_of_the_fork** - the url of your fork repo of the main repo.
-- **developerrepo_url** - the url of a developer's repo.
-
-## Developers
-
-### Prepare the environment
-
-1. setup git configuration. The following you have yo execute on all of your machines, or copy the git config to all of your machines.
-
-    ```shell
-    git config --global branch.autosetuprebase always
-    git config --global user.name "FirsName LastName"
-    git config --global user.email johndoe@example.com
-    git config --global core.ignorecase false
-    ```
-
-1. Using github fork the main repo.
-
-1. Create a local copy of the forked repo:
-
-    ```shell
-    git clone url_of_the_fork
-    ```
-
-1. Now when your **origin** points to your fork. You need to add the main repo to your remotes as well.
-    You should have "origin --> you fork" and "mainrepo --> the main repo".
-
-    ```shell
-    git remote add mainrepo mainrepo_url
-    git fetch mainrepo
-    ```
-
-1. Create a local dev branch
-
-    ```shell
-    git checkout -b dev mainrepo/dev
-    ```
-
-1. Push the local dev to your remote (forked repo):
-
-    ```shell
-    git push -u origin dev
-    ```
-
-### Create a feature branch
-
-Each task or ticket MUST be developed in a separate branch.
-
-1. Create a feature branch from the latest stat of the central dev.
-
-    ```shell
-    git fetch mainrepo
-    git checkout -b featureXXX mainrepo/dev
-    ```
-
-1. Push the feature branch to your fork and track it
-
-    ```shell
-    git push -u origin featureXXX
-    ```
-
-### Sync your feature branch
-
-As often as possible sync your feature branch with the central dev.
-
-1. Sync:
-
-    ```shell
-    git fetch mainrepo
-    git checkout featureXXX
-    git rebase mainrepo/dev
-    ```
-
-   - Resolve conflicts if any.
-   - Stage each modified file `git add <file_name>` after conflicts are resolved.
-   - You can also use `git checkout --theirs/--ours <filename>` to help to resolve conflicts.
-   - Use `git rebase --continue` to continue rebasing.
-
-1. push to you remote clone:
-
-    ```shell
-    git push origin
-    ```
-
-    Most probably your local repo and the remote repo will be diverged at this point. Git will warn you that you are about to change the history and will not allow you to push.
-
-    Please, revise the output to make sure that you are actually pushing to the right repo and only after that execute the following to force (`--force-with-lease`) git to change the history.
-
-    ```shell
-    git push --force-with-lease origin
-    ```
-
-    We recommend to do push in two steps intuitionally to prevent unwanted changes.  
-    Even if you are 100% sure, ALWAYS first execute `git push` without `--force-with-lease`.
-    Revise the output.  
-    Check that the repo you are pushing is the the one you want and only then force push with `--force-with-lease`.
-
-### Request to pull
-
-1. Always rebase to the main dev before requesting to pull.
-
-    ```shell
-    git fetch mainrepo
-    git checkout featureXXX
-    git rebase mainrepo/dev
-    ```
-
-    - Resolve conflicts if any.
-    - Stage each modified file `git add <file_name>` after conflicts are resolved.
-    - You can also use `git checkout --theirs/--ours <filename>` to help to resolve conflicts.
-    - Use `git rebase --continue` to continue rebasing.
-
-1. Squash all of your commits. Once your code is perfect, clean up its history.
-
-    ```shell
-    git rebase -i mainrepo/dev
-    ```
-
-    > [!NOTE]
-    > It is very important for the history of the main repository that all of your commits are squashed.
-    > In the future nobody is interested to see your "cosmetic changes" commits or commits related to any other minor changes. The best way to introduce a feature is to introduce it as a patch.
-    > This is why, do squash all your commits into one, write a good proper comment before requesting to pull your code.
-
-1. Push your changes to your remote repo. You may need to use `push -f` since after the rebase your remote repo can be diverged from the local repo.
-
-    ```shell
-    git push --force-with-lease origin
-    ```
-
-1. Request to pull. Let your release manager know that you want your patch to be merged with the central dev branch. Use a simple email or github to send a pull request.
-
-> [!NOTE]
-> Stop working on the featureXXX branch, after you sent a request to pull. Create a new branch for any other feature/ticket/bug.
-
-### Create patches
-
-Just in case if you can't just push or request to pull your changes, you can create a git patch.
-
-```shell
-git format-patch origin/master --stdout > a_fix.patch
+The **master branch** contains only stable, production-ready code.
+
+**Characteristics:**
+- All production releases are tagged here
+- Always buildable and deployable
+- No direct development allowed
+- Only release managers have write access
+- History moves only forward (no force pushes)
+- New changes enter only via fast-forward merges
+
+**Protection Rules:**
+```bash
+# Only fast-forward merges allowed
+git merge --ff-only feature-branch
 ```
 
-The command above will create a patch, of the changes which differ you from the "origin/master" branch.
+### develop branch
 
-### Apply a patch
+The **develop branch** is the main development integration point.
 
-```shell
-git am --signoff < a_fix.patch
+**Characteristics:**
+- Branched from the latest `master`
+- Integration point for all feature branches
+- Periodically rebased from `master` when releases are completed
+- Contains the latest development changes destined for the next release
+
+**Maintenance:**
+```bash
+# Keep develop updated with master after each release
+git switch develop
+git rebase master
 ```
 
-If there are different line ending settings between source and dest. machines you may want to either ignore space changes - but in this case git will create a new commit ID
+### release branch
 
-```shell
-git am --ignore-space-change --ignore-whitespace --signoff < a_fix.patch
+**Release branches** are temporary branches for release preparation.
+
+**Purpose:**
+- Enables feature freeze while allowing continued development
+- Provides isolated environment for release testing and bug fixes
+- Only critical bug fixes allowed (no new features)
+
+**Lifecycle:**
+1. Created from `develop` when ready for release
+2. Bug fixes applied during testing phase
+3. Merged to `master` when release is complete
+4. Deleted after successful merge
+
+**Example:**
+```bash
+# Create release branch
+git switch -c release/v1.3.0 develop
+
+# After release is complete
+git switch master
+git merge --ff-only release/v1.3.0
+git tag v1.3.0
+git branch -d release/v1.3.0
 ```
 
-or try to preserver cr or the patch 0 (but this will cause a warning about trailing whitespace).
+### hotfix branch
 
-```shell
-git am --keep-cr --signoff < a_fix.patch
+**Hotfix branches** handle critical production issues.
+
+**Characteristics:**
+- Created from the affected production tag on `master`
+- Contains only the minimal fix for the critical issue
+- Merged directly back to `master`
+- `develop` branch must be rebased after hotfix integration
+
+**Example:**
+```bash
+# Create hotfix from production tag
+git switch -c hotfix/v1.2.3-critical-fix v1.2.2
+
+# After fix is complete and tested
+git switch master
+git merge --ff-only hotfix/v1.2.3-critical-fix
+git tag v1.2.3
+
+# Update develop with the hotfix
+git switch develop
+git rebase master
 ```
 
-## Release manager
+### feature branches
 
-The write access to the repository is restricted to release managers only. The repository contains the following permanent branches: **master**, **dev**. The "RC" and "HotFix" are created (branched) only when we need them and deleted as soon as their commits are merged into the master or when we don't need those branches.
+**Feature branches** are where individual development work happens.
 
-### Prepare the environment
+**Naming Convention:**
+- `feature/TICKET-123-short-description`
+- `bugfix/TICKET-456-fix-login-issue`
 
-1. setup git configuration. The following you have yo execute on all of your machines, or copy the git config to all of your machines.
+**Best Practices:**
+- Created from latest `develop`
+- Regularly rebased against `develop`
+- Commits squashed before integration
+- Deleted after successful merge
 
-    ```shell
-    git config --global branch.autosetuprebase always
-    git config --global user.name "FirsName LastName"
-    git config --global user.email johndoe@example.com
-    git config --global core.ignorecase false
-    ```
+## Team Roles
 
-1. Using github fork the main repo.
+| Role | Permissions | Responsibilities |
+|------|-------------|------------------|
+| **Developer** | Read: `master`, `develop`<br>Write: `feature/*`, `bugfix/*` | Feature development, bug fixes, code reviews |
+| **Release Manager** | Read/Write: All branches | Integration, releases, hotfixes, branch management |
 
-1. Create a local copy of the forked repo:
+---
 
-    ```shell
-    git clone url_of_the_fork
-    ```
+# Getting Started
 
-1. Now when your **origin** points to your fork. You need to add the main repo to your remotes as well.
-    You should have "origin --> you fork" and "mainrepo --> the main repo".
+## Initial Setup
 
-    ```shell
-    git remote add mainrepo mainrepo_url
-    git fetch mainrepo
-    ```
+This setup process applies to both developers and release managers.
 
-1. create a local **dev** branch with upstream to the mainrepo/dev.
+### 1. Configure Git
 
-    ```shell
-    git checkout -t -b dev mainrepo/dev
-    ```
+Set up your Git configuration (run once per machine):
 
-### Process pull requests
+```bash
+# Enable automatic rebase for new branches
+git config --global branch.autosetuprebase always
 
-You can process pull requests automatically if you are using GitLab or GitHub. Both vendors offer users a possibility to use fast forward merging.
+# Set your identity (use your real name and email)
+git config --global user.name "John Doe"
+git config --global user.email "john.doe@company.com"
 
-[GitLab - "Fast-forward merge"](https://docs.gitlab.com/ee/user/project/merge_requests/fast_forward_merge.html)  
-[GitHub - "Rebase and merge"](https://help.github.com/articles/merging-a-pull-request/)
+# Case-sensitive file names
+git config --global core.ignorecase false
 
-1. update
+# Better merge conflict resolution
+git config --global merge.conflictstyle diff3
+```
 
-    ```shell
-    git fetch origin
-    git fetch mainrepo
-    ```
+### 2. Fork and Clone
 
-1. Add the developer's repo to your remotes. You need to do it only once per developer, when you for the first time fetch from this developer
+1. **Fork the main repository** on GitHub/GitLab
+2. **Clone your fork locally**:
 
-    ```shell
-    git remote add dev_name developer_repo_url
-    git fetch dev_name
-    ```
+```bash
+git clone https://github.com/YOUR_USERNAME/PROJECT_NAME.git
+cd PROJECT_NAME
+```
 
-1. Now merge the changes the developer has provided
+### 3. Set Up Remotes
 
-    ```shell
-    git checkout -f dev
-    git rebase mainrepo/dev
-    git merge --ff-only dev_name/featureXXX
-    ```
+Add the main repository as your upstream remote:
 
-   If there are conflicts or git says, that it can't use fast forward, than reject the request and ask developer to rebase from the main dev branchy again, fix conflicts if needed and send a new pull request.
+```bash
+# Add upstream remote (main repository)
+git remote add upstream https://github.com/ORGANIZATION/PROJECT_NAME.git
 
-1. If no conflicts are found, push this commit to the main dev branch:
+# Fetch all branches
+git fetch upstream
 
-    ```shell
-    git push mainrepo dev:dev
-    ```
+# Verify your remotes
+git remote -v
+# Should show:
+# origin    https://github.com/YOUR_USERNAME/PROJECT_NAME.git (fetch)
+# origin    https://github.com/YOUR_USERNAME/PROJECT_NAME.git (push)
+# upstream  https://github.com/ORGANIZATION/PROJECT_NAME.git (fetch)
+# upstream  https://github.com/ORGANIZATION/PROJECT_NAME.git (push)
+```
 
-### Prepare a Release Candidate
+### 4. Create Local Development Branch
 
-### Hot Fixes
+```bash
+# Create and switch to local develop branch
+git switch -c develop upstream/develop
 
-# Tips and HOWTOs
+# Push to your fork and set up tracking
+git push -u origin develop
+```
 
-## How to recover after upstream branch was rebased
+---
 
-The following tip will help us to recover in cases when you or your colleague had to change something in the history of a high level branch (our upstream).
-It can be easily the case when you need to change history (rebase, move/delete/squash commits, etc.) of the DEV branch, for example. When the history of dev branch is changed, then all branches inherited from it (feature branches) will have problems to rebase on it, because all commits, which differ you from the dev branch will be consider by git as new (your) changes and it will try to merge them.
+# Developer Workflows
 
-Let's take an example.
-Dev before change of the history and F is your feature branch:
+## Working on Features
+
+### 1. Create a Feature Branch
+
+Always create feature branches from the latest `develop`:
+
+```bash
+# Fetch latest changes
+git fetch upstream
+
+# Create feature branch from upstream develop
+git switch -c feature/ABC-123-user-authentication upstream/develop
+
+# Push to your fork and set up tracking
+git push -u origin feature/ABC-123-user-authentication
+```
+
+**Branch Naming Guidelines:**
+
+- Include ticket number: `feature/ABC-123-description`
+- Use lowercase with hyphens: `feature/abc-123-user-auth`
+- Keep description short but meaningful
+- For bugs: `bugfix/DEF-456-login-crash`
+
+### 2. Develop Your Feature
+
+Make commits as you work, following these practices:
+
+```bash
+# Make your changes
+# ... edit files ...
+
+# Stage and commit
+git add .
+git commit -m "Add user authentication endpoint
+
+- Implement JWT token generation
+- Add password validation
+- Include rate limiting
+
+Closes ABC-123"
+```
+
+**Commit Message Guidelines:**
+
+- First line: brief summary (50 chars max)
+- Blank line, then detailed description
+- Include ticket references
+- Use imperative mood ("Add" not "Added")
+
+## Keeping Your Branch Updated
+
+Regularly sync your feature branch with `develop` to avoid conflicts:
+
+```bash
+# Fetch latest changes
+git fetch upstream
+
+# Switch to your feature branch
+git switch feature/ABC-123-user-authentication
+
+# Rebase onto latest develop
+git rebase upstream/develop
+```
+
+**If conflicts occur:**
+
+```bash
+# Git will pause rebase and show conflicts
+# Edit files to resolve conflicts, then:
+
+git add <resolved-file>
+git rebase --continue
+
+# If you need to abort the rebase:
+git rebase --abort
+```
+
+**Push your updated branch:**
+
+```bash
+# After successful rebase, force push (safely)
+git push --force-with-lease origin feature/ABC-123-user-authentication
+```
+
+> **Why `--force-with-lease`?** This is safer than `--force` because it checks that no one else has pushed to your branch since your last fetch.
+
+## Submitting Your Work
+
+### 1. Final Preparation
+
+Before submitting, ensure your branch is clean and up-to-date:
+
+```bash
+# Fetch and rebase one final time
+git fetch upstream
+git rebase upstream/develop
+
+# Review your commits
+git log --oneline upstream/develop..HEAD
+```
+
+### 2. Squash Your Commits
+
+Clean up your commit history by squashing related commits:
+
+```bash
+# Interactive rebase to squash commits
+git rebase -i upstream/develop
+```
+
+In the interactive editor:
+
+- Keep the first commit as `pick`
+- Change others to `squash` or `s`
+- Write a clear, comprehensive commit message
+
+**Example squash result:**
+
+```
+Add user authentication system
+
+- Implement JWT token generation and validation
+- Add bcrypt password hashing
+- Include rate limiting for login attempts  
+- Add comprehensive unit tests
+- Update API documentation
+
+Closes ABC-123
+```
+
+### 3. Create Pull Request
+
+```bash
+# Push your final version
+git push --force-with-lease origin feature/ABC-123-user-authentication
+```
+
+Then create a pull request from your fork to the main repository's `develop` branch.
+
+**Pull Request Guidelines:**
+
+- **Title**: `[ABC-123] Add user authentication system`
+- **Description**: Explain what was implemented and why
+- **Testing**: Describe how to test the changes
+- **Screenshots**: Include for UI changes
+
+### 4. Stop Working on the Branch
+
+> [!IMPORTANT]
+> After submitting your pull request, **stop working on that feature branch**. Start a new branch for any additional work.
+
+This prevents complications during the review and merge process.
+
+---
+
+# Release Manager Workflows
+
+Release managers have write access to the main repository and are responsible for integrating changes and managing releases.
+
+## Processing Pull Requests
+
+### Modern Approach: Platform Integration
+
+Most Git platforms (GitHub, GitLab) provide built-in support for rebase-based workflows:
+
+**GitHub:**
+- Use "Rebase and merge" option for pull requests
+- Enable "Require linear history" branch protection
+- Set up automated checks before allowing merge
+
+**GitLab:**
+- Configure "Fast-forward merge" in project settings
+- Use merge request pipelines for automated testing
+
+### Manual Processing (if needed)
+
+If you need to process pull requests manually:
+
+```bash
+# 1. Update your local repository
+git fetch origin
+git fetch upstream
+
+# 2. Add developer's repository (first time only)
+git remote add dev-john https://github.com/john/PROJECT_NAME.git
+git fetch dev-john
+
+# 3. Switch to develop and ensure it's current
+git switch develop
+git rebase upstream/develop
+
+# 4. Attempt fast-forward merge
+git merge --ff-only dev-john/feature/ABC-123-user-auth
+```
+
+**If fast-forward fails:**
+- Request the developer to rebase their branch and resubmit
+- The merge should always be fast-forward only
+
+```bash
+# 5. Push to main repository (if merge succeeded)
+git push upstream develop
+```
+
+## Creating Releases
+
+### 1. Create Release Branch
+
+When `develop` contains all features for the next release:
+
+```bash
+# Create release branch from develop
+git switch -c release/v1.3.0 develop
+
+# Push to main repository
+git push upstream release/v1.3.0
+```
+
+### 2. Release Testing and Bug Fixes
+
+During the release testing phase:
+
+- Only critical bug fixes are allowed on the release branch
+- No new features
+- Developers continue working on `develop` for the next release
+
+```bash
+# Example: Apply bug fix to release branch
+git switch release/v1.3.0
+git merge --ff-only hotfix-branch-from-developer
+```
+
+### 3. Complete the Release
+
+When testing is complete and the release is ready:
+
+```bash
+# 1. Switch to master and merge release
+git switch master
+git merge --ff-only release/v1.3.0
+
+# 2. Tag the release
+git tag -a v1.3.0 -m "Release version 1.3.0
+
+- Feature: User authentication system
+- Feature: New dashboard layout  
+- Fix: Memory leak in data processor
+- Fix: Login timeout issues"
+
+# 3. Push to main repository
+git push upstream master
+git push upstream v1.3.0
+
+# 4. Update develop with any release fixes
+git switch develop
+git rebase master
+
+# 5. Clean up release branch
+git branch -d release/v1.3.0
+git push upstream --delete release/v1.3.0
+```
+
+## Managing Hotfixes
+
+### 1. Create Hotfix Branch
+
+For critical production issues:
+
+```bash
+# Create hotfix from the affected production tag
+git switch -c hotfix/v1.2.3-security-patch v1.2.2
+
+# Make the minimal fix
+# ... edit files ...
+git add .
+git commit -m "Fix critical security vulnerability
+
+- Sanitize user input in login form
+- Add input validation tests
+- Update security documentation
+
+Fixes: SEC-789"
+```
+
+### 2. Test and Deploy Hotfix
+
+Test the hotfix thoroughly in an isolated environment before proceeding.
+
+### 3. Integrate Hotfix
+
+```bash
+# 1. Merge to master
+git switch master  
+git merge --ff-only hotfix/v1.2.3-security-patch
+
+# 2. Tag the hotfix release
+git tag -a v1.2.3 -m "Hotfix v1.2.3: Security patch"
+
+# 3. Push to main repository
+git push upstream master
+git push upstream v1.2.3
+
+# 4. Update develop
+git switch develop
+git rebase master
+
+# 5. Clean up hotfix branch
+git branch -d hotfix/v1.2.3-security-patch
+```
+
+---
+
+# Advanced Topics
+
+## Recovering from Upstream Rebases
+
+Sometimes the upstream branch history needs to be changed (rebased, commits moved/deleted/squashed). When this happens, feature branches derived from the old history will have problems rebasing.
+
+### The Problem
+
+**Before upstream rebase:**
 
 ```text
-    C0
-    |
-    C1
-    |
-    C2
-    |\
-    C3 cf1
-    C4 cf2
+C0 ← C1 ← C2 ← C3 ← C4    (develop)
+          ↑
+          └─ cf1 ← cf2     (your feature branch)
 ```
 
-‘DEV’ has C1,C2,C3,C4
-‘F’ has C1,C2,cf1,cf2
-
-After the change of the history of the DEV it looks like:
+**After upstream rebase:**
 
 ```text
-    C0
-    |
-    C1x
-    |
-    C2x
-    |   
-    C3x
-    C4x
+C0 ← C1x ← C2x ← C3x ← C4x (develop - rebased)
+
+C0 ← C1 ← C2 ← cf1 ← cf2   (your feature branch - now orphaned)
 ```
 
-And F still looks like:
+Git sees `C1`, `C2` as different from `C1x`, `C2x`, causing merge conflicts when rebasing.
 
-```text
-    C0
-    |
-    C1
-    |
-    C2
-    |
-    cf1
-    |
-    cf2
+### The Solution
+
+Use `git rebase --onto` to move your commits to the new base:
+
+```bash
+# Fetch the updated upstream
+git fetch upstream
+
+# Rebase your feature commits onto the new develop
+git rebase --onto upstream/develop develop feature/ABC-123
 ```
 
-For git commits C1, C2 is now different from the commits C1x, C2x from the DEV branch.
-To avoid merging nightmare and duplications of the commits we have to just change the parent commit of our commits in the feature branch. The commits cf1, cf2 is our commits belonging to the new feature. At the moment their parent is C2.
+This command means: "Take commits from `develop` to `feature/ABC-123` and replay them onto `upstream/develop`."
 
-So, what basically happened is that our feature branch is not forked from the changed DEV anymore. But we want it to depend on the DEV. What we need is only to move commits of the feature branch to a new parent - C2x.
+**Alternative approach if you know the commit IDs:**
 
-Fortunately git can easily help us to fix our problem. Checkout your feature branch you want to fix and execute the following:
+```bash
+# Find the old parent commit ID
+OLD_PARENT=$(git merge-base develop upstream/develop)
 
-```shell
-git fetch mainrepo
-git rebase --onto mainrepo/dev dev F
+# Rebase onto new parent  
+git rebase --onto upstream/develop $OLD_PARENT feature/ABC-123
 ```
 
-This basically says, “Check out the F branch, figure out the patches from the common ancestor of the mainrepo/dev and our local dev (which is not changed yet) branches, and then replay them onto master.”
-If you don't have a local, unchanged version of the DEV branch, then you can even manually find out the commit ID, which is the last common between the new DEV and your F branch and execute:
+### Prevention
 
-```shell
-git rebase --onto <new-parent> <old-parent> F
+To minimize the need for history changes:
+
+- Keep feature branches short-lived
+- Rebase frequently to stay current
+- Squash commits before submitting pull requests
+
+## Working with Patches
+
+Sometimes you may need to work with patches instead of direct git operations.
+
+### Creating Patches
+
+```bash
+# Create patch for all commits different from master
+git format-patch upstream/master --stdout > my-feature.patch
+
+# Create patch for specific commits
+git format-patch HEAD~3..HEAD --stdout > last-3-commits.patch
+
+# Create patch for specific files
+git format-patch HEAD~1 --stdout -- src/specific-file.js > file-changes.patch
 ```
 
-Find more on this topic [here](http://git-scm.com/book/en/Git-Branching-Rebasing).
+### Applying Patches
+
+```bash
+# Apply patch with sign-off
+git am --signoff < my-feature.patch
+
+# Apply with different line ending handling
+git am --ignore-space-change --ignore-whitespace --signoff < my-feature.patch
+
+# Preserve carriage returns (Windows)
+git am --keep-cr --signoff < my-feature.patch
+
+# If patch fails to apply cleanly
+git am --abort  # to cancel
+# or
+git am --skip   # to skip current patch
+```
+
+---
+
+# Modern Git Features
+
+This workflow can benefit from several modern Git features and tools.
+
+## Modern Commands
+
+**Use `git switch` instead of `git checkout` for branch operations:**
+
+```bash
+# Old way
+git checkout -b feature/new-feature
+
+# Modern way  
+git switch -c feature/new-feature
+
+# Switch to existing branch
+git switch develop
+```
+
+**Use `git restore` for file operations:**
+
+```bash
+# Old way
+git checkout -- file.txt
+
+# Modern way
+git restore file.txt
+
+# Restore from specific commit
+git restore --source=HEAD~2 file.txt
+```
+
+## Enhanced Safety
+
+**Use `--force-with-lease` with additional safety:**
+
+```bash
+# Even safer than --force-with-lease
+git push --force-if-includes origin feature/ABC-123
+```
+
+**Configure safer defaults:**
+
+```bash
+# Require confirmation for force pushes
+git config --global push.default simple
+git config --global push.followTags true
+
+# Better diff handling
+git config --global diff.algorithm histogram
+git config --global merge.conflictstyle diff3
+```
+
+## Productivity Enhancements
+
+**Auto-stash during rebase:**
+
+```bash
+# Automatically stash/unstash during rebase
+git pull --rebase --autostash upstream develop
+```
+
+**Better branch management:**
+
+```bash
+# List branches and their status
+git branch -vv
+
+# Find merged branches
+git branch --merged upstream/master
+
+# Clean up merged branches
+git branch --merged upstream/master | grep -v master | xargs git branch -d
+```
+
+## Integration with Modern Tools
+
+### GitHub CLI
+
+```bash
+# Install GitHub CLI
+brew install gh  # macOS
+# or download from https://cli.github.com
+
+# Create PR from command line
+gh pr create --title "Add user authentication" --body "Implements JWT-based auth system"
+
+# Review PRs
+gh pr list
+gh pr view 123
+gh pr checkout 123
+```
+
+### Improved Workflow Commands
+
+```bash
+# View commit graph
+git log --graph --oneline --all
+
+# Interactive branch switching
+git switch $(git branch | fzf)  # requires fzf
+
+# Better blame with ignore revisions
+git config blame.ignoreRevsFile .git-blame-ignore-revs
+```
+
+## Platform-Specific Features
+
+### GitHub Features
+
+- **Draft Pull Requests**: Mark PRs as work-in-progress
+- **Auto-merge**: Automatically merge when checks pass
+- **Merge Queues**: Serialize merges to prevent conflicts
+- **Required Status Checks**: Enforce CI/CD before merge
+
+### GitLab Features
+
+- **Merge Request Pipelines**: Run CI on merge result
+- **Semi-linear Merge**: Rebase with merge commit
+- **Push Rules**: Enforce commit message formats
+
+---
+
+## Conclusion
+
+This rebase-based workflow provides:
+
+✅ **Clean History**: Linear commit history without merge pollution  
+✅ **Stable Master**: Always-deployable master branch  
+✅ **Parallel Development**: Teams can work without blocking each other  
+✅ **Quality Control**: Multiple checkpoints before production  
+✅ **Modern Tooling**: Leverages latest Git and platform features  
+
+The key to success is **consistent application** of these practices by all team members and **regular communication** between developers and release managers.
+
+For questions or suggestions, contact: [Anar.Manafov@gmail.com](mailto:Anar.Manafov@gmail.com)
