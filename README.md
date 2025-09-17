@@ -30,6 +30,7 @@
     - [4. Create Local Development Branch](#4-create-local-development-branch)
 - [Developer Workflows](#developer-workflows)
   - [Working on Features](#working-on-features)
+    - [Feature Development Flow Visualization](#feature-development-flow-visualization)
     - [1. Create a Feature Branch](#1-create-a-feature-branch)
     - [2. Develop Your Feature](#2-develop-your-feature)
   - [Keeping Your Branch Updated](#keeping-your-branch-updated)
@@ -43,6 +44,7 @@
     - [Modern Approach: Platform Integration](#modern-approach-platform-integration)
     - [Manual Processing (if needed)](#manual-processing-if-needed)
   - [Creating Releases](#creating-releases)
+    - [Git History Visualization](#git-history-visualization)
     - [1. Create Release Branch](#1-create-release-branch)
     - [2. Release Testing and Bug Fixes](#2-release-testing-and-bug-fixes)
     - [3. Complete the Release](#3-complete-the-release)
@@ -69,6 +71,7 @@
     - [GitHub Features](#github-features)
     - [GitLab Features](#gitlab-features)
   - [Conclusion](#conclusion)
+    - [Quick Reference: Key Principles](#quick-reference-key-principles)
 
 # Introduction
 
@@ -659,6 +662,50 @@ git push -u origin develop
 
 ## Working on Features
 
+### Feature Development Flow Visualization
+
+The following diagram shows the complete feature development workflow with regular rebasing and fast-forward only merges:
+
+```mermaid
+---
+config:
+  theme: 'base'
+  gitGraph:
+    mainBranchName: 'dev'
+---
+gitGraph
+    commit id: "init"
+    commit id: "dev-1"
+    commit id: "dev-2"
+    branch Feature256
+    checkout Feature256
+    commit id: "feature-1"
+    commit id: "feature-2"
+    checkout dev
+    commit id: "dev-3"
+    checkout Feature256
+    merge dev tag: "rebase on dev-3"
+    commit id: "feature-3"
+    checkout dev
+    commit id: "dev-4"
+    commit id: "dev-5"
+    checkout Feature256
+    merge dev tag: "rebase on dev-5"
+    commit id: "feature-4 (squashed)"
+    checkout dev
+    merge Feature256 tag: "FF merge only"
+    commit id: "dev-6"
+```
+
+**Key aspects of the feature development flow:**
+
+- **Parallel Development**: Feature branch works alongside continued dev branch development
+- **Multiple Regular Rebases**: Feature branch stays current with dev branch changes (rebased on dev-3, then again on dev-5)
+- **Continuous Synchronization**: Developer rebases multiple times during development, not just at the end
+- **Commit Squashing**: Multiple feature commits are squashed into clean, atomic commits
+- **Fast-Forward Only Merge**: Clean integration ensures linear history on dev branch
+- **Continuous Flow**: Development continues seamlessly after feature integration
+
 ### 1. Create a Feature Branch
 
 Always create feature branches from the latest `develop`:
@@ -883,11 +930,18 @@ flowchart TD
     E --> C
     D -->|No| F[🎯 Switch to master<br/>git switch master]
     F --> G[⚡ Fast-Forward Merge<br/>git merge --ff-only release/v1.3.0]
-    G --> H[🏷️ Tag Release<br/>git tag -a v1.3.0 -m Release notes]
-    H --> I[📤 Push Everything<br/>git push upstream master and tag]
-    I --> J[🔄 Update develop<br/>git switch develop and git rebase master]
-    J --> K[🧹 Cleanup<br/>Delete release branch]
-    K --> L[✅ Release Complete!<br/>Ready for next cycle]
+    G --> H[🔄 Rebase develop on master<br/>git switch develop && git rebase master]
+    H --> I[🏷️ Tag Release<br/>git tag -a v1.3.0 -m Release notes]
+    I --> J[📤 Push Everything<br/>git push upstream master and tag]
+    J --> K{🔥 Post-Release Issues?}
+    K -->|Yes| L[� Create RC Fix Branch<br/>git switch -c release/v1.3.0-fix master]
+    L --> M[🔧 Apply Critical Fixes<br/>Hotfix for RC issues]
+    M --> N[⚡ Merge RC Fix to master<br/>git switch master && git merge --ff-only release/v1.3.0-fix]
+    N --> O[🔄 Rebase develop on master<br/>git switch develop && git rebase master]
+    O --> P[🧹 Cleanup RC Fix Branch<br/>Delete release/v1.3.0-fix]
+    P --> Q[✅ RC Fix Complete!<br/>develop updated with fixes]
+    K -->|No| R[🧹 Cleanup<br/>Delete release branch]
+    R --> S[✅ Release Complete!<br/>Ready for next cycle]
     
     style A fill:#e3f2fd,stroke:#1976d2,stroke-width:2px
     style B fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px
@@ -896,12 +950,80 @@ flowchart TD
     style E fill:#ffcdd2,stroke:#d32f2f,stroke-width:2px
     style F fill:#e8f5e8,stroke:#388e3c,stroke-width:2px
     style G fill:#e8f5e8,stroke:#388e3c,stroke-width:2px
-    style H fill:#e1bee7,stroke:#7b1fa2,stroke-width:2px
-    style I fill:#e0f2f1,stroke:#00695c,stroke-width:2px
-    style J fill:#f1f8e9,stroke:#558b2f,stroke-width:2px
-    style K fill:#fce4ec,stroke:#c2185b,stroke-width:2px
-    style L fill:#c8e6c9,stroke:#2e7d32,stroke-width:3px
+    style H fill:#f1f8e9,stroke:#558b2f,stroke-width:2px
+    style I fill:#e1bee7,stroke:#7b1fa2,stroke-width:2px
+    style J fill:#e0f2f1,stroke:#00695c,stroke-width:2px
+    style K fill:#ffecb3,stroke:#ffa000,stroke-width:2px
+    style L fill:#fff3e0,stroke:#f57c00,stroke-width:2px
+    style M fill:#ffcdd2,stroke:#d32f2f,stroke-width:2px
+    style N fill:#e8f5e8,stroke:#388e3c,stroke-width:2px
+    style O fill:#f1f8e9,stroke:#558b2f,stroke-width:2px
+    style P fill:#fce4ec,stroke:#c2185b,stroke-width:2px
+    style Q fill:#c8e6c9,stroke:#2e7d32,stroke-width:3px
+    style R fill:#fce4ec,stroke:#c2185b,stroke-width:2px
+    style S fill:#c8e6c9,stroke:#2e7d32,stroke-width:3px
 ```
+
+### Git History Visualization
+
+The following diagram shows how the release candidate flow appears in the actual git history:
+
+```mermaid
+---
+config:
+  theme: 'base'
+  gitGraph:
+    mainBranchName: 'master'
+---
+gitGraph
+    commit id: "init"
+    commit id: "setup-project"
+    commit id: "initial-config"
+    branch develop
+    checkout develop
+    commit id: "feature-1"
+    commit id: "feature-2"
+    commit id: "feature-3"
+    checkout master
+    commit id: "master-fix-1"
+    commit id: "master-fix-2"
+    checkout develop
+    merge master tag: "rebase develop on master"
+    commit
+    branch release/v1.3.0
+    checkout release/v1.3.0
+    commit id: "RC-fix-1"
+    commit id: "RC-fix-2"
+    checkout master
+    merge release/v1.3.0 tag: "FF merge to master"
+    checkout develop
+    merge master tag: "rebase develop on master"
+    checkout master
+    commit
+    commit
+    commit id: "v1.3.0" tag: "v1.3.0"
+    checkout develop
+    merge master tag: "rebase develop on master"
+    commit id: "next-feature-1"
+    commit id: "next-feature-2"
+    branch release/v1.3.1-fix
+    checkout release/v1.3.1-fix
+    commit id: "post-release-fix"
+    checkout master
+    merge release/v1.3.1-fix tag: "FF merge RC fix"
+    commit
+    commit id: "v1.3.1" tag: "v1.3.1"
+    checkout develop
+    merge master tag: "rebase develop on master (RC fix)"
+    commit id: "continue-development"
+```
+
+**Key aspects of the git history:**
+
+- **Clean linear history** on master branch with tagged releases
+- **Develop synchronization** after each release and RC fix merge
+- **Feature isolation** during release preparation
+- **Post-release fixes** integrated back to both master and develop
 
 ### 1. Create Release Branch
 
@@ -938,7 +1060,11 @@ When testing is complete and the release is ready:
 git switch master
 git merge --ff-only release/v1.3.0
 
-# 2. Tag the release
+# 2. Immediately rebase develop on master (IMPORTANT: RC integration)
+git switch develop
+git rebase master
+
+# 3. Tag the release
 git tag -a v1.3.0 -m "Release version 1.3.0
 
 - Feature: User authentication system
@@ -946,17 +1072,19 @@ git tag -a v1.3.0 -m "Release version 1.3.0
 - Fix: Memory leak in data processor
 - Fix: Login timeout issues"
 
-# 3. Push to central repository
+# 4. Push to central repository
 git push upstream master
 git push upstream v1.3.0
-
-# 4. Update develop with any release fixes
-git switch develop
-git rebase master
 
 # 5. Clean up release branch
 git branch -d release/v1.3.0
 git push upstream --delete release/v1.3.0
+
+# 6. If post-release RC fixes are needed:
+#    a. Create RC fix branch: git switch -c release/v1.3.0-fix master
+#    b. Apply fixes and merge to master with --ff-only
+#    c. Immediately rebase develop on master again
+#    d. Clean up RC fix branch
 ```
 
 ## Managing Hotfixes
@@ -1296,7 +1424,18 @@ This rebase-based workflow provides:
 ✅ **Stable Master**: Always-deployable master branch  
 ✅ **Parallel Development**: Teams can work without blocking each other  
 ✅ **Quality Control**: Multiple checkpoints before production  
-✅ **Modern Tooling**: Leverages latest Git and platform features  
+✅ **Modern Tooling**: Leverages latest Git and platform features
+
+### Quick Reference: Key Principles
+
+For team members who need a quick reminder of the core principles:
+
+1. **Fast-Forward Only Merges**: Ensures clean, linear history
+2. **Rebase Before Merge**: Conflicts resolved by developers before integration  
+3. **Squash Commits**: Clean, atomic commits in main branches
+4. **Version Tags**: Created on master after successful releases/hotfixes
+5. **Synchronization**: Dev branch stays updated with master changes
+6. **RC Integration**: Dev branch must be rebased on master after every RC merge and RC fix merge  
 
 The key to success is **consistent application** of these practices by all team members and **regular communication** between developers and release managers.
 
